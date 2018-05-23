@@ -100,6 +100,7 @@ func newMinter(config *params.ChainConfig, eth *RaftService, blockTime time.Dura
 
 	// The reward starting timestamp is set in RewardTimestamp of chainconfig
 	// Using EPOCH time in second (ex: 1526786514 (s))
+	minter.rewardStartTimestamp = minter.rewardStartTimestamp.Add(params.MasterNodeRewardDelay)
 	log.Info("Minting MN reward", "address", params.MasterNodeRewardAddress, "interval", rewardTime, "start_time(local)", minter.rewardStartTimestamp)
 	minter.isRewardStarted = minter.rewardStartTimestamp.Before(time.Now())
 
