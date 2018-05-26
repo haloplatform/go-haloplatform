@@ -23,7 +23,7 @@ var (
 )
 
 const (
-	GasLimitBoundDivisor uint64 = 64       // The bound divisor of the gas limit, used in update calculations.
+	GasLimitBoundDivisor uint64 = 2        // The bound divisor of the gas limit, used in update calculations.
 	MinGasLimit          uint64 = 5000     // Minimum the gas limit may ever be.
 	GenesisGasLimit      uint64 = 90000000 // Gas limit of the Genesis block.
 
