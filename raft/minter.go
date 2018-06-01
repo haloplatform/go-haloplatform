@@ -17,6 +17,7 @@
 package raft
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 	"sync"
@@ -347,8 +348,6 @@ func (minter *minter) mintNewBlock() {
 	if minter.isRewardStarted {
 		tmpTime := minter.rewardMintingTimestamp.Add(minter.rewardTime)
 		if tmpTime.Before(time.Now()) {
-			log.Info("Adding MN block reward")
-			minter.rewardMintingTimestamp = tmpTime
 			rewardAddr = params.MasterNodeRewardAddress
 		}
 	} else {
@@ -373,6 +372,12 @@ func (minter *minter) mintNewBlock() {
 
 	header := work.header
 
+	zeroAddr := common.HexToAddress("0x0000000000000000000000000000000000000000")
+	if minter.isRewardStarted && bytes.Compare(zeroAddr.Bytes(), rewardAddr.Bytes()) != 0 {
+		/// Actually having minting, updating timestamp
+		log.Info("Adding MN block reward")
+		minter.rewardMintingTimestamp = minter.rewardMintingTimestamp.Add(minter.rewardTime)
+	}
 	// commit state root after all state transitions.
 	ethash.AccumulateRewards(minter.chain.Config(), work.publicState, header, nil)
 	header.Root = work.publicState.IntermediateRoot(minter.chain.Config().IsEIP158(work.header.Number))
