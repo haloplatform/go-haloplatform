@@ -163,7 +163,6 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.MNInstanceAddrFlag,
 			utils.MNRewardAddrFlag,
 			utils.PingKeyFlag,
-			utils.PingIntervalFlag,
 		},
 	},
 	{

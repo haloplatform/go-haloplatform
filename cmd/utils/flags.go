@@ -627,12 +627,6 @@ var (
 		Name:  "pingkey",
 		Usage: "Private key for pinging to MN smart contract",
 	}
-
-	PingIntervalFlag = cli.IntFlag{
-		Name:  "pinginterval",
-		Usage: "Ping interval in minute",
-		Value: 4,
-	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
@@ -1003,7 +997,7 @@ func setMasternodeConfig(ctx *cli.Context, cfg *mn.Config) {
 
 	cfg.InstAddr = common.HexToAddress(inst_addr)
 	cfg.RewardAddr = common.HexToAddress(reward_addr)
-	cfg.PingInterVal = ctx.GlobalInt(PingIntervalFlag.Name)
+	cfg.PingInterVal = 10 // Fixed at 10 minutes
 
 	if !ctx.GlobalIsSet(PingKeyFlag.Name) {
 		Fatalf("PING requires private key, option: %q", PingKeyFlag.Name)

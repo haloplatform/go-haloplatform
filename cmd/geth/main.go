@@ -139,7 +139,6 @@ var (
 		utils.MNInstanceAddrFlag,
 		utils.MNRewardAddrFlag,
 		utils.PingKeyFlag,
-		utils.PingIntervalFlag,
 		utils.RaftRewardTimeFlag,
 	}
 

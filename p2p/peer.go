@@ -460,3 +460,8 @@ func (p *Peer) Info() *PeerInfo {
 	}
 	return info
 }
+
+/// Check whether a peer is in trusted-nodes.json or not
+func (p *Peer) IsTrusted() bool {
+	return p.rw.is(trustedConn)
+}

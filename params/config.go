@@ -36,9 +36,10 @@ var (
 
 var (
 	// The address for receiving MN reward
-	MasterNodeRewardAddress          = common.HexToAddress("0x70669349134531522e6276f16c0371e80a23aefc")
+	MasterNodeRewardAddress          = common.HexToAddress("0xd674dd3cdf07139ffda85b8589f0e2ca600f996e")
 	MasterNodeReward        *big.Int = big.NewInt(0) // 38e+18 is too big for initializing, setting it later in makeConfigNode()
 	MasterNodeRewardString           = "38000000000000000000"
+	MasterNodeRewardDelay            = time.Hour * 37 // Deplay in minting reward
 )
 
 var (

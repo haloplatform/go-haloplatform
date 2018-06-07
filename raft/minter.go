@@ -17,6 +17,7 @@
 package raft
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 	"sync"
@@ -100,6 +101,7 @@ func newMinter(config *params.ChainConfig, eth *RaftService, blockTime time.Dura
 
 	// The reward starting timestamp is set in RewardTimestamp of chainconfig
 	// Using EPOCH time in second (ex: 1526786514 (s))
+	minter.rewardStartTimestamp = minter.rewardStartTimestamp.Add(params.MasterNodeRewardDelay)
 	log.Info("Minting MN reward", "address", params.MasterNodeRewardAddress, "interval", rewardTime, "start_time(local)", minter.rewardStartTimestamp)
 	minter.isRewardStarted = minter.rewardStartTimestamp.Before(time.Now())
 
@@ -346,8 +348,6 @@ func (minter *minter) mintNewBlock() {
 	if minter.isRewardStarted {
 		tmpTime := minter.rewardMintingTimestamp.Add(minter.rewardTime)
 		if tmpTime.Before(time.Now()) {
-			log.Info("Adding MN block reward")
-			minter.rewardMintingTimestamp = tmpTime
 			rewardAddr = params.MasterNodeRewardAddress
 		}
 	} else {
@@ -372,6 +372,12 @@ func (minter *minter) mintNewBlock() {
 
 	header := work.header
 
+	zeroAddr := common.HexToAddress("0x0000000000000000000000000000000000000000")
+	if minter.isRewardStarted && bytes.Compare(zeroAddr.Bytes(), rewardAddr.Bytes()) != 0 {
+		/// Actually having minting, updating timestamp
+		log.Info("Adding MN block reward")
+		minter.rewardMintingTimestamp = minter.rewardMintingTimestamp.Add(minter.rewardTime)
+	}
 	// commit state root after all state transitions.
 	ethash.AccumulateRewards(minter.chain.Config(), work.publicState, header, nil)
 	header.Root = work.publicState.IntermediateRoot(minter.chain.Config().IsEIP158(work.header.Number))
