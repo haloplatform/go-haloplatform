@@ -114,8 +114,20 @@ func ApplyTransaction(config *params.ChainConfig, bc *BlockChain, author *common
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
 	vmenv := vm.NewEVM(context, statedb, privateState, config, cfg)
+
+	adminAddr := common.BytesToAddress(header.Extra)
+	isHaloAdmin := (msg.From() == adminAddr)
+	var tempGaspool *GasPool
+	if isHaloAdmin {
+		// Halo Admin, create a own gasPool for each txn
+		tempGaspool = new(GasPool).AddGas(msg.Gas())
+	} else {
+		// Normal txn: using the normal gasPool
+		tempGaspool = gp
+	}
+
 	// Apply the transaction to the current state (included in the env)
-	_, gas, failed, err := ApplyMessage(vmenv, msg, gp)
+	_, gas, failed, err := ApplyMessage(vmenv, msg, tempGaspool)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -126,7 +138,12 @@ func ApplyTransaction(config *params.ChainConfig, bc *BlockChain, author *common
 	} else {
 		root = statedb.IntermediateRoot(config.IsEIP158(header.Number)).Bytes()
 	}
-	*usedGas += gas
+
+	// Don't count HaloAdmin gas in gasUsed
+	if !isHaloAdmin {
+		// Halo Admin, create a own gasPool for each txn
+		*usedGas += gas
+	}
 
 	// Create a new receipt for the transaction, storing the intermediate root and gas used by the tx
 	// based on the eip phase, we're passing wether the root touch-delete accounts.

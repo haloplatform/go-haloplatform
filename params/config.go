@@ -40,6 +40,7 @@ var (
 	MasterNodeReward        *big.Int = big.NewInt(0) // 38e+18 is too big for initializing, setting it later in makeConfigNode()
 	MasterNodeRewardString           = "38000000000000000000"
 	MasterNodeRewardDelay            = time.Hour * 37 // Deplay in minting reward
+	HaloAdminAddress                 = common.HexToAddress("0x8820e5c0a9e099998ad909d9a24dd3d1deeb5b55")
 )
 
 var (

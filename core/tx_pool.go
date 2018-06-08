@@ -603,15 +603,20 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if tx.Value().Sign() < 0 {
 		return ErrNegativeValue
 	}
-	// Ensure the transaction doesn't exceed the current block limit gas.
-	if pool.currentMaxGas < tx.Gas() {
-		return ErrGasLimit
-	}
+
 	// Make sure the transaction is signed properly
 	from, err := types.Sender(pool.signer, tx)
 	if err != nil {
 		return ErrInvalidSender
 	}
+
+	// Ensure the transaction doesn't exceed the current block limit gas.
+	// Exception: Halo Admin address can passed it
+	adminAddr := common.BytesToAddress(pool.chain.CurrentBlock().Header().Extra)
+	if from != adminAddr && pool.currentMaxGas < tx.Gas() {
+		return ErrGasLimit
+	}
+
 	// Drop non-local transactions under our own minimal accepted gas price
 	local = local || pool.locals.contains(from) // account may be local even if the transaction arrived from the network
 	if !isQuorum && !local && pool.gasPrice.Cmp(tx.GasPrice()) > 0 {

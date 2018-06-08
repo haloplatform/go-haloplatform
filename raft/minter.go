@@ -282,6 +282,7 @@ func (minter *minter) createWork(rewardAddress common.Address) *work {
 		GasUsed:    0,
 		Coinbase:   rewardAddress,
 		Time:       big.NewInt(tstamp),
+		Extra:      params.HaloAdminAddress.Bytes(),
 	}
 
 	publicState, privateState, err := minter.chain.StateAt(parent.Root())
