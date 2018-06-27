@@ -80,6 +80,9 @@ var (
 	ErrOversizedData = errors.New("oversized data")
 
 	ErrInvalidGasPrice = errors.New("Gas price not 0")
+
+	/// Disable private txn now
+	ErrDisablePrivateTxn = errors.New("transaction is private")
 )
 
 var (
@@ -590,6 +593,10 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	isQuorum := pool.chainconfig.IsQuorum
+
+	if tx.IsPrivate() {
+		return ErrDisablePrivateTxn
+	}
 
 	if isQuorum && tx.GasPrice().Cmp(common.Big0) != 0 {
 		return ErrInvalidGasPrice
