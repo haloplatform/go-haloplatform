@@ -1171,8 +1171,8 @@ func (pool *TxPool) demoteUnexecutables() {
 
 /// With remote txn on full-MN, we need to replay it to other peers only.
 func (pool *TxPool) ReplayRemoteTx(txs []*types.Transaction) {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 
 	/// Ignore a known txn (it's local txn with going back from other nodes)
 	for _, tx := range txs {
