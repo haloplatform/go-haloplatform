@@ -637,7 +637,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if err != nil {
 		return err
 	}
-	if !isQuorum && tx.Gas() < intrGas {
+	if tx.Gas() < intrGas {
 		return ErrIntrinsicGas
 	}
 	return nil
