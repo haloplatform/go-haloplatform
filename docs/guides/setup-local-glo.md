@@ -10,3 +10,8 @@ The following guide will help you in setting up a local `glo` node and connect t
     3. Next if you are on Windows run `./full-node-qanet-start.cmd` or on Linux/Mac run `./full-node-qanet-start.sh`
     ![start command](../img/start.PNG)
 5. Once you see the logs pring `Blockchain Synchronization Started` and some blocks coming in you are done!
+
+**Note**
+If you wish to connect `Feather` to a locally running `glo` node you will need to alter the `full-node-{network}-start` script as follows:
+1. Change `--rpcport 9565` to `--rpcport 8545`
+2. Add `--rpccorsdomain "*"` after `--rpcport 8545`
