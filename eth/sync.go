@@ -166,6 +166,11 @@ func (pm *ProtocolManager) syncer() {
 
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer) {
+	defer func() {
+		pm.wg.Done()
+	}()
+
+	pm.wg.Add(1)
 	// Short circuit if no peers are available
 	if peer == nil {
 		return

@@ -420,7 +420,6 @@ func (s *Ethereum) Stop() error {
 		s.stopDbUpgrade()
 	}
 	s.bloomIndexer.Close()
-	s.blockchain.Stop()
 	s.protocolManager.Stop()
 	if s.lesServer != nil {
 		s.lesServer.Stop()
@@ -429,6 +428,7 @@ func (s *Ethereum) Stop() error {
 	s.miner.Stop()
 	s.eventMux.Stop()
 
+	s.blockchain.Stop()
 	s.chainDb.Close()
 	close(s.shutdownChan)
 
