@@ -227,7 +227,13 @@ func (db *Database) dereference(child common.Hash, parent common.Hash) {
 		return
 	}
 	// If there are no more references to the child, delete it and cascade
-	node.parents--
+	if node.parents > 0 {
+		// This is a special cornercase where a node loaded from disk (i.e. not in the
+		// memcache any more) gets reinjected as a new node (short node split into full,
+		// then reverted into short), causing a cached node to have no parents. That is
+		// no problem in itself, but don't make maxint parents out of it.
+		node.parents--
+	}
 	if node.parents == 0 {
 		for hash := range node.children {
 			db.dereference(hash, child)
