@@ -166,6 +166,8 @@ func (pm *ProtocolManager) syncer() {
 
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer) {
+	/// The fixing from GoEthereum PR #16509 is not good.
+	/// Have to wait at here
 	defer func() {
 		pm.wg.Done()
 	}()
