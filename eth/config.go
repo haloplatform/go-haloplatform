@@ -47,7 +47,7 @@ var DefaultConfig = Config{
 	LightPeers:    0,
 	DatabaseCache: 768,
 	TrieCache:     256,
-	TrieTimeout:   60 * time.Minute,
+	TrieTimeout:   60 * time.Minute, /// Don't apply this value for Raft mode. Changing to 5 minutes in eth/backend.go
 	GasPrice:      big.NewInt(18 * params.Shannon),
 
 	TxPool: core.DefaultTxPoolConfig,
