@@ -32,8 +32,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-const Version = 4
-
 // Errors
 var (
 	errPacketTooSmall   = errors.New("too small")
@@ -49,7 +47,6 @@ var (
 // Timeouts
 const (
 	respTimeout = 500 * time.Millisecond
-	sendTimeout = 500 * time.Millisecond
 	expiration  = 20 * time.Second
 
 	ntpFailureThreshold = 32               // Continuous timeouts after which to check NTP
@@ -280,22 +277,34 @@ func (t *udp) close() {
 
 // ping sends a ping message to the given node and waits for a reply.
 func (t *udp) ping(toid NodeID, toaddr *net.UDPAddr) error {
+	return <-t.sendPing(toid, toaddr, nil)
+}
+
+// sendPing sends a ping message to the given node and invokes the callback
+// when the reply arrives.
+func (t *udp) sendPing(toid NodeID, toaddr *net.UDPAddr, callback func()) <-chan error {
 	req := &ping{
 		NetworkId:  t.networkId,
-		Version:    Version,
+		Version:    4,
 		From:       t.ourEndpoint,
 		To:         makeEndpoint(toaddr, 0), // TODO: maybe use known TCP port from DB
 		Expiration: uint64(time.Now().Add(expiration).Unix()),
 	}
 	packet, hash, err := encodePacket(t.priv, pingPacket, req)
 	if err != nil {
-		return err
+		errc := make(chan error, 1)
+		errc <- err
+		return errc
 	}
 	errc := t.pending(toid, pongPacket, func(p interface{}) bool {
-		return bytes.Equal(p.(*pong).ReplyTok, hash)
+		ok := bytes.Equal(p.(*pong).ReplyTok, hash)
+		if ok && callback != nil {
+			callback()
+		}
+		return ok
 	})
 	t.write(toaddr, req.name(), packet)
-	return <-errc
+	return errc
 }
 
 func (t *udp) waitping(from NodeID) error {
@@ -305,6 +314,13 @@ func (t *udp) waitping(from NodeID) error {
 // findnode sends a findnode request to the given node and waits until
 // the node has sent up to k neighbors.
 func (t *udp) findnode(toid NodeID, toaddr *net.UDPAddr, target NodeID, peerCount int32) ([]*Node, error) {
+	// If we haven't seen a ping from the destination node for a while, it won't remember
+	// our endpoint proof and reject findnode. Solicit a ping first.
+	if time.Since(t.db.lastPingReceived(toid)) > nodeDBNodeExpiration {
+		t.ping(toid, toaddr)
+		t.waitping(toid)
+	}
+
 	nodes := make([]*Node, 0, bucketSize)
 	nreceived := 0
 	errc := t.pending(toid, neighborsPacket, func(r interface{}) bool {
@@ -319,7 +335,7 @@ func (t *udp) findnode(toid NodeID, toaddr *net.UDPAddr, target NodeID, peerCoun
 			nodes = append(nodes, n)
 		}
 		if peerCount == 0 {
-			/// When having no peer, accepting all non-empty lists
+			///GLO: When having no peer, accepting all non-empty lists
 			return nreceived > 0
 		}
 		return nreceived >= bucketSize
@@ -328,8 +344,7 @@ func (t *udp) findnode(toid NodeID, toaddr *net.UDPAddr, target NodeID, peerCoun
 		Target:     target,
 		Expiration: uint64(time.Now().Add(expiration).Unix()),
 	})
-	err := <-errc
-	return nodes, err
+	return nodes, <-errc
 }
 
 // pending adds a reply callback to the pending reply queue.
@@ -541,10 +556,8 @@ func (t *udp) readLoop(unhandled chan<- ReadPacket) {
 			return
 		}
 		if t.handlePacket(from, buf[:nbytes]) != nil && unhandled != nil {
-			temp := make([]byte, 1280)
-			copy(temp[:nbytes], buf[:nbytes])
 			select {
-			case unhandled <- ReadPacket{temp[:nbytes], from}:
+			case unhandled <- ReadPacket{buf[:nbytes], from}:
 			default:
 			}
 		}
@@ -554,11 +567,11 @@ func (t *udp) readLoop(unhandled chan<- ReadPacket) {
 func (t *udp) handlePacket(from *net.UDPAddr, buf []byte) error {
 	packet, fromID, hash, err := decodePacket(buf, t.networkId)
 	if err != nil {
-		/// Change to TRACE because this message will go to "unhandled" for V5 handler
+		///GLO: Change to TRACE because this message will go to "unhandled" for V5 handler
 		log.Trace("Bad discv4 packet", "addr", from, "err", err)
+
 		return err
 	}
-
 	err = packet.handle(t, from, fromID, hash)
 	log.Trace("<< "+packet.name(), "addr", from, "err", err)
 	return err
@@ -611,16 +624,22 @@ func (req *ping) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte) er
 	if expired(req.Expiration) {
 		return errExpired
 	}
-
 	t.send(from, pongPacket, &pong{
 		To:         makeEndpoint(from, req.From.TCP),
 		ReplyTok:   mac,
 		Expiration: uint64(time.Now().Add(expiration).Unix()),
 	})
-	if !t.handleReply(fromID, pingPacket, req) {
-		// Note: we're ignoring the provided IP address right now
-		go t.bond(true, fromID, from, req.From.TCP)
+	t.handleReply(fromID, pingPacket, req)
+
+	// Add the node to the table. Before doing so, ensure that we have a recent enough pong
+	// recorded in the database so their findnode requests will be accepted later.
+	n := NewNode(fromID, from.IP, uint16(from.Port), req.From.TCP)
+	if time.Since(t.db.lastPongReceived(fromID)) > nodeDBNodeExpiration {
+		t.sendPing(fromID, from, func() { t.addThroughPing(n) })
+	} else {
+		t.addThroughPing(n)
 	}
+	t.db.updateLastPingReceived(fromID, time.Now())
 	return nil
 }
 
@@ -633,6 +652,7 @@ func (req *pong) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte) er
 	if !t.handleReply(fromID, pongPacket, req) {
 		return errUnsolicitedReply
 	}
+	t.db.updateLastPongReceived(fromID, time.Now())
 	return nil
 }
 
@@ -643,13 +663,12 @@ func (req *findnode) handle(t *udp, from *net.UDPAddr, fromID NodeID, mac []byte
 		return errExpired
 	}
 	if !t.db.hasBond(fromID) {
-		// No bond exists, we don't process the packet. This prevents
-		// an attack vector where the discovery protocol could be used
-		// to amplify traffic in a DDOS attack. A malicious actor
-		// would send a findnode request with the IP address and UDP
-		// port of the target as the source address. The recipient of
-		// the findnode packet would then send a neighbors packet
-		// (which is a much bigger packet than findnode) to the victim.
+		// No endpoint proof pong exists, we don't process the packet. This prevents an
+		// attack vector where the discovery protocol could be used to amplify traffic in a
+		// DDOS attack. A malicious actor would send a findnode request with the IP address
+		// and UDP port of the target as the source address. The recipient of the findnode
+		// packet would then send a neighbors packet (which is a much bigger packet than
+		// findnode) to the victim.
 		return errUnknownNode
 	}
 	target := crypto.Keccak256Hash(req.Target[:])
