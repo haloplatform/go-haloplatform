@@ -23,6 +23,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 )
@@ -372,4 +373,29 @@ func FindCommonAncestor(db DatabaseReader, a, b *types.Header) *types.Header {
 		}
 	}
 	return a
+}
+
+func GetPrivateStateRoot(db ethdb.Database, blockRoot common.Hash) common.Hash {
+	root, _ := db.Get(append(privateRootPrefix, blockRoot[:]...))
+	return common.BytesToHash(root)
+}
+
+func WritePrivateStateRoot(db ethdb.Database, blockRoot, root common.Hash) error {
+	return db.Put(append(privateRootPrefix, blockRoot[:]...), root[:])
+}
+
+// WritePrivateBlockBloom creates a bloom filter for the given receipts and saves it to the database
+// with the number given as identifier (i.e. block number).
+func WritePrivateBlockBloom(db ethdb.Database, number uint64, receipts types.Receipts) error {
+	rbloom := types.CreateBloom(receipts)
+	return db.Put(append(privateBloomPrefix, encodeBlockNumber(number)...), rbloom[:])
+}
+
+// GetPrivateBlockBloom retrieves the private bloom associated with the given number.
+func GetPrivateBlockBloom(db ethdb.Database, number uint64) (bloom types.Bloom) {
+	data, _ := db.Get(append(privateBloomPrefix, encodeBlockNumber(number)...))
+	if len(data) > 0 {
+		bloom = types.BytesToBloom(data)
+	}
+	return bloom
 }

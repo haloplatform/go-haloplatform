@@ -62,6 +62,11 @@ var (
 	// GLO: Disable because we don't merge this feature from metric yet
 	// preimageCounter    = metrics.NewRegisteredCounter("db/preimage/total", nil)
 	// preimageHitCounter = metrics.NewRegisteredCounter("db/preimage/hits", nil)
+
+	privateRootPrefix          = []byte("P")
+	privateblockReceiptsPrefix = []byte("Pr") // blockReceiptsPrefix + num (uint64 big endian) + hash -> block receipts
+	privateReceiptPrefix       = []byte("Prs")
+	privateBloomPrefix         = []byte("Pb")
 )
 
 // TxLookupEntry is a positional metadata to help looking up the data content of

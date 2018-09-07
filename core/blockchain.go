@@ -230,7 +230,7 @@ func (bc *BlockChain) loadLastState() error {
 	}
 
 	// Quorum
-	if _, err := state.New(GetPrivateStateRoot(bc.db, currentBlock.Root()), bc.privateStateCache); err != nil {
+	if _, err := state.New(rawdb.GetPrivateStateRoot(bc.db, currentBlock.Root()), bc.privateStateCache); err != nil {
 		log.Warn("Head private state missing, resetting chain", "number", currentBlock.Number(), "hash", currentBlock.Hash())
 		return bc.Reset()
 	}
@@ -403,7 +403,7 @@ func (bc *BlockChain) StateAt(root common.Hash) (*state.StateDB, *state.StateDB,
 	if publicStateDbErr != nil {
 		return nil, nil, publicStateDbErr
 	}
-	privateStateDb, privateStateDbErr := state.New(GetPrivateStateRoot(bc.db, root), bc.privateStateCache)
+	privateStateDb, privateStateDbErr := state.New(rawdb.GetPrivateStateRoot(bc.db, root), bc.privateStateCache)
 	if privateStateDbErr != nil {
 		return nil, nil, privateStateDbErr
 	}
@@ -696,7 +696,7 @@ func (bc *BlockChain) Stop() {
 					log.Error("Failed to commit recent state trie", "err", err)
 				}
 				// Glo
-				privateStateRoot := GetPrivateStateRoot(bc.db, recent.Root())
+				privateStateRoot := rawdb.GetPrivateStateRoot(bc.db, recent.Root())
 				if err := privateTriedb.Commit(privateStateRoot, true); err != nil {
 					log.Error("Failed to commit recent private state trie", "err", err)
 				}
@@ -942,7 +942,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 	if privateStateRoot, err = privateState.Commit(bc.chainConfig.IsEIP158(block.Number())); err != nil {
 		return NonStatTy, err
 	}
-	if err := WritePrivateStateRoot(bc.db, block.Root(), privateStateRoot); err != nil {
+	if err := rawdb.WritePrivateStateRoot(bc.db, block.Root(), privateStateRoot); err != nil {
 		return NonStatTy, err
 	}
 	privateTriedb := bc.privateStateCache.TrieDB()
@@ -986,7 +986,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 				triedb.Commit(header.Root, true)
 
 				// GLO
-				privateStateRoot = GetPrivateStateRoot(bc.db, header.Root)
+				privateStateRoot = rawdb.GetPrivateStateRoot(bc.db, header.Root)
 				privateTriedb.Commit(privateStateRoot, true)
 				lastWrite = chosen
 				bc.gcproc = 0
@@ -1193,7 +1193,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		}
 
 		// Quorum
-		privateStateRoot := GetPrivateStateRoot(bc.db, parent.Root())
+		privateStateRoot := rawdb.GetPrivateStateRoot(bc.db, parent.Root())
 		privateState, err := stateNew(privateStateRoot, bc.privateStateCache)
 		if err != nil {
 			return i, events, coalescedLogs, err
