@@ -27,6 +27,7 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/event"
@@ -1628,7 +1629,6 @@ func (d *Downloader) requestTTL() time.Duration {
 	}
 	return ttl
 }
-
 
 // Extra downloader functionality for non-proof-of-work consensus
 
