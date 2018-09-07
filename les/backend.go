@@ -32,7 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/eth/filters"
-	"github.com/ethereum/go-ethereum/eth/gasprice"
+	// "github.com/ethereum/go-ethereum/eth/gasprice"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/internal/ethapi"
@@ -80,62 +80,65 @@ type LightEthereum struct {
 }
 
 func New(ctx *node.ServiceContext, config *eth.Config) (*LightEthereum, error) {
-	chainDb, err := eth.CreateDB(ctx, config, "lightchaindata")
-	if err != nil {
-		return nil, err
-	}
-	chainConfig, genesisHash, genesisErr := core.SetupGenesisBlock(chainDb, config.Genesis)
-	if _, isCompat := genesisErr.(*params.ConfigCompatError); genesisErr != nil && !isCompat {
-		return nil, genesisErr
-	}
-	log.Info("Initialised chain configuration", "config", chainConfig)
+	// GLO: disable
+	// chainDb, err := eth.CreateDB(ctx, config, "lightchaindata")
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// chainConfig, genesisHash, genesisErr := core.SetupGenesisBlock(chainDb, config.Genesis)
+	// if _, isCompat := genesisErr.(*params.ConfigCompatError); genesisErr != nil && !isCompat {
+	// 	return nil, genesisErr
+	// }
+	// log.Info("Initialised chain configuration", "config", chainConfig)
 
-	peers := newPeerSet()
-	quitSync := make(chan struct{})
+	// peers := newPeerSet()
+	// quitSync := make(chan struct{})
 
-	leth := &LightEthereum{
-		config:           config,
-		chainConfig:      chainConfig,
-		chainDb:          chainDb,
-		eventMux:         ctx.EventMux,
-		peers:            peers,
-		reqDist:          newRequestDistributor(peers, quitSync),
-		accountManager:   ctx.AccountManager,
-		engine:           eth.CreateConsensusEngine(ctx, &config.Ethash, chainConfig, chainDb),
-		shutdownChan:     make(chan bool),
-		networkId:        config.NetworkId,
-		bloomRequests:    make(chan chan *bloombits.Retrieval),
-		bloomIndexer:     eth.NewBloomIndexer(chainDb, light.BloomTrieFrequency),
-		chtIndexer:       light.NewChtIndexer(chainDb, true),
-		bloomTrieIndexer: light.NewBloomTrieIndexer(chainDb, true),
-	}
+	// leth := &LightEthereum{
+	// 	config:           config,
+	// 	chainConfig:      chainConfig,
+	// 	chainDb:          chainDb,
+	// 	eventMux:         ctx.EventMux,
+	// 	peers:            peers,
+	// 	reqDist:          newRequestDistributor(peers, quitSync),
+	// 	accountManager:   ctx.AccountManager,
+	// 	engine:           eth.CreateConsensusEngine(ctx, &config.Ethash, chainConfig, chainDb),
+	// 	shutdownChan:     make(chan bool),
+	// 	networkId:        config.NetworkId,
+	// 	bloomRequests:    make(chan chan *bloombits.Retrieval),
+	// 	bloomIndexer:     eth.NewBloomIndexer(chainDb, light.BloomTrieFrequency),
+	// 	chtIndexer:       light.NewChtIndexer(chainDb, true),
+	// 	bloomTrieIndexer: light.NewBloomTrieIndexer(chainDb, true),
+	// }
 
-	leth.relay = NewLesTxRelay(peers, leth.reqDist)
-	leth.serverPool = newServerPool(chainDb, quitSync, &leth.wg)
-	leth.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
-	leth.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
-	if leth.blockchain, err = light.NewLightChain(leth.odr, leth.chainConfig, leth.engine); err != nil {
-		return nil, err
-	}
-	leth.bloomIndexer.Start(leth.blockchain)
-	// Rewind the chain in case of an incompatible config upgrade.
-	if compat, ok := genesisErr.(*params.ConfigCompatError); ok {
-		log.Warn("Rewinding chain to upgrade configuration", "err", compat)
-		leth.blockchain.SetHead(compat.RewindTo)
-		core.WriteChainConfig(chainDb, genesisHash, chainConfig)
-	}
+	// leth.relay = NewLesTxRelay(peers, leth.reqDist)
+	// leth.serverPool = newServerPool(chainDb, quitSync, &leth.wg)
+	// leth.retriever = newRetrieveManager(peers, leth.reqDist, leth.serverPool)
+	// leth.odr = NewLesOdr(chainDb, leth.chtIndexer, leth.bloomTrieIndexer, leth.bloomIndexer, leth.retriever)
+	// if leth.blockchain, err = light.NewLightChain(leth.odr, leth.chainConfig, leth.engine); err != nil {
+	// 	return nil, err
+	// }
+	// leth.bloomIndexer.Start(leth.blockchain)
+	// // Rewind the chain in case of an incompatible config upgrade.
+	// if compat, ok := genesisErr.(*params.ConfigCompatError); ok {
+	// 	log.Warn("Rewinding chain to upgrade configuration", "err", compat)
+	// 	leth.blockchain.SetHead(compat.RewindTo)
+	// 	core.WriteChainConfig(chainDb, genesisHash, chainConfig)
+	// }
 
-	leth.txPool = light.NewTxPool(leth.chainConfig, leth.blockchain, leth.relay)
-	if leth.protocolManager, err = NewProtocolManager(leth.chainConfig, true, ClientProtocolVersions, config.NetworkId, leth.eventMux, leth.engine, leth.peers, leth.blockchain, nil, chainDb, leth.odr, leth.relay, quitSync, &leth.wg); err != nil {
-		return nil, err
-	}
-	leth.ApiBackend = &LesApiBackend{leth, nil}
-	gpoParams := config.GPO
-	if gpoParams.Default == nil {
-		gpoParams.Default = config.GasPrice
-	}
-	leth.ApiBackend.gpo = gasprice.NewOracle(leth.ApiBackend, gpoParams)
-	return leth, nil
+	// leth.txPool = light.NewTxPool(leth.chainConfig, leth.blockchain, leth.relay)
+	// if leth.protocolManager, err = NewProtocolManager(leth.chainConfig, true, ClientProtocolVersions, config.NetworkId, leth.eventMux, leth.engine, leth.peers, leth.blockchain, nil, chainDb, leth.odr, leth.relay, quitSync, &leth.wg); err != nil {
+	// 	return nil, err
+	// }
+	// leth.ApiBackend = &LesApiBackend{leth, nil}
+	// gpoParams := config.GPO
+	// if gpoParams.Default == nil {
+	// 	gpoParams.Default = config.GasPrice
+	// }
+	// leth.ApiBackend.gpo = gasprice.NewOracle(leth.ApiBackend, gpoParams)
+	// return leth, nil
+
+	return nil, nil
 }
 
 func lesTopic(genesisHash common.Hash, protocolVersion uint) discv5.Topic {

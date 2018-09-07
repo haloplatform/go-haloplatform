@@ -24,7 +24,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
+	// "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
@@ -97,35 +97,36 @@ func (r *BlockRequest) Request(reqID uint64, peer *peer) error {
 // returns true and stores results in memory if the message was a valid reply
 // to the request (implementation of LesOdrRequest)
 func (r *BlockRequest) Validate(db ethdb.Database, msg *Msg) error {
-	log.Debug("Validating block body", "hash", r.Hash)
+	// GLO: disable
+	// log.Debug("Validating block body", "hash", r.Hash)
 
-	// Ensure we have a correct message with a single block body
-	if msg.MsgType != MsgBlockBodies {
-		return errInvalidMessageType
-	}
-	bodies := msg.Obj.([]*types.Body)
-	if len(bodies) != 1 {
-		return errInvalidEntryCount
-	}
-	body := bodies[0]
+	// // Ensure we have a correct message with a single block body
+	// if msg.MsgType != MsgBlockBodies {
+	// 	return errInvalidMessageType
+	// }
+	// bodies := msg.Obj.([]*types.Body)
+	// if len(bodies) != 1 {
+	// 	return errInvalidEntryCount
+	// }
+	// body := bodies[0]
 
-	// Retrieve our stored header and validate block content against it
-	header := core.GetHeader(db, r.Hash, r.Number)
-	if header == nil {
-		return errHeaderUnavailable
-	}
-	if header.TxHash != types.DeriveSha(types.Transactions(body.Transactions)) {
-		return errTxHashMismatch
-	}
-	if header.UncleHash != types.CalcUncleHash(body.Uncles) {
-		return errUncleHashMismatch
-	}
-	// Validations passed, encode and store RLP
-	data, err := rlp.EncodeToBytes(body)
-	if err != nil {
-		return err
-	}
-	r.Rlp = data
+	// // Retrieve our stored header and validate block content against it
+	// header := core.GetHeader(db, r.Hash, r.Number)
+	// if header == nil {
+	// 	return errHeaderUnavailable
+	// }
+	// if header.TxHash != types.DeriveSha(types.Transactions(body.Transactions)) {
+	// 	return errTxHashMismatch
+	// }
+	// if header.UncleHash != types.CalcUncleHash(body.Uncles) {
+	// 	return errUncleHashMismatch
+	// }
+	// // Validations passed, encode and store RLP
+	// data, err := rlp.EncodeToBytes(body)
+	// if err != nil {
+	// 	return err
+	// }
+	// r.Rlp = data
 	return nil
 }
 
@@ -153,28 +154,29 @@ func (r *ReceiptsRequest) Request(reqID uint64, peer *peer) error {
 // returns true and stores results in memory if the message was a valid reply
 // to the request (implementation of LesOdrRequest)
 func (r *ReceiptsRequest) Validate(db ethdb.Database, msg *Msg) error {
-	log.Debug("Validating block receipts", "hash", r.Hash)
+	// GLO: disable
+	// log.Debug("Validating block receipts", "hash", r.Hash)
 
-	// Ensure we have a correct message with a single block receipt
-	if msg.MsgType != MsgReceipts {
-		return errInvalidMessageType
-	}
-	receipts := msg.Obj.([]types.Receipts)
-	if len(receipts) != 1 {
-		return errInvalidEntryCount
-	}
-	receipt := receipts[0]
+	// // Ensure we have a correct message with a single block receipt
+	// if msg.MsgType != MsgReceipts {
+	// 	return errInvalidMessageType
+	// }
+	// receipts := msg.Obj.([]types.Receipts)
+	// if len(receipts) != 1 {
+	// 	return errInvalidEntryCount
+	// }
+	// receipt := receipts[0]
 
-	// Retrieve our stored header and validate receipt content against it
-	header := core.GetHeader(db, r.Hash, r.Number)
-	if header == nil {
-		return errHeaderUnavailable
-	}
-	if header.ReceiptHash != types.DeriveSha(receipt) {
-		return errReceiptHashMismatch
-	}
-	// Validations passed, store and return
-	r.Receipts = receipt
+	// // Retrieve our stored header and validate receipt content against it
+	// header := core.GetHeader(db, r.Hash, r.Number)
+	// if header == nil {
+	// 	return errHeaderUnavailable
+	// }
+	// if header.ReceiptHash != types.DeriveSha(receipt) {
+	// 	return errReceiptHashMismatch
+	// }
+	// // Validations passed, store and return
+	// r.Receipts = receipt
 	return nil
 }
 

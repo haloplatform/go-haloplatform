@@ -28,6 +28,7 @@ import (
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -316,7 +317,7 @@ func (self *worker) wait() {
 			}
 			// write private transacions
 			privateStateRoot, _ := work.privateState.Commit(self.config.IsEIP158(block.Number()))
-			core.WritePrivateStateRoot(self.chainDb, block.Root(), privateStateRoot)
+			rawdb.WritePrivateStateRoot(self.chainDb, block.Root(), privateStateRoot)
 			allReceipts := append(work.receipts, work.privateReceipts...)
 
 			stat, err := self.chain.WriteBlockWithState(block, allReceipts, work.state, work.privateState)

@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ethereum/go-ethereum/core"
+	// "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/light"
 )
@@ -60,9 +60,11 @@ func (pm *ProtocolManager) syncer() {
 }
 
 func (pm *ProtocolManager) needToSync(peerHead blockInfo) bool {
-	head := pm.blockchain.CurrentHeader()
-	currentTd := core.GetTd(pm.chainDb, head.Hash(), head.Number.Uint64())
-	return currentTd != nil && peerHead.Td.Cmp(currentTd) > 0
+	// GLO: disable
+	// head := pm.blockchain.CurrentHeader()
+	// currentTd := core.GetTd(pm.chainDb, head.Hash(), head.Number.Uint64())
+	// return currentTd != nil && peerHead.Td.Cmp(currentTd) > 0
+	return false
 }
 
 // synchronise tries to sync up our local block chain with a remote peer.

@@ -142,19 +142,20 @@ func (self *LightChain) Odr() OdrBackend {
 // loadLastState loads the last known chain state from the database. This method
 // assumes that the chain manager mutex is held.
 func (self *LightChain) loadLastState() error {
-	if head := core.GetHeadHeaderHash(self.chainDb); head == (common.Hash{}) {
-		// Corrupt or empty database, init from scratch
-		self.Reset()
-	} else {
-		if header := self.GetHeaderByHash(head); header != nil {
-			self.hc.SetCurrentHeader(header)
-		}
-	}
+	// GLO: disable
+	// if head := core.GetHeadHeaderHash(self.chainDb); head == (common.Hash{}) {
+	// 	// Corrupt or empty database, init from scratch
+	// 	self.Reset()
+	// } else {
+	// 	if header := self.GetHeaderByHash(head); header != nil {
+	// 		self.hc.SetCurrentHeader(header)
+	// 	}
+	// }
 
-	// Issue a status log and return
-	header := self.hc.CurrentHeader()
-	headerTd := self.GetTd(header.Hash(), header.Number.Uint64())
-	log.Info("Loaded most recent local header", "number", header.Number, "hash", header.Hash(), "td", headerTd)
+	// // Issue a status log and return
+	// header := self.hc.CurrentHeader()
+	// headerTd := self.GetTd(header.Hash(), header.Number.Uint64())
+	// log.Info("Loaded most recent local header", "number", header.Number, "hash", header.Hash(), "td", headerTd)
 
 	return nil
 }
@@ -182,22 +183,23 @@ func (bc *LightChain) Reset() {
 // ResetWithGenesisBlock purges the entire blockchain, restoring it to the
 // specified genesis state.
 func (bc *LightChain) ResetWithGenesisBlock(genesis *types.Block) {
-	// Dump the entire block chain and purge the caches
-	bc.SetHead(0)
+	// GLO: disable
+	// // Dump the entire block chain and purge the caches
+	// bc.SetHead(0)
 
-	bc.mu.Lock()
-	defer bc.mu.Unlock()
+	// bc.mu.Lock()
+	// defer bc.mu.Unlock()
 
-	// Prepare the genesis block and reinitialise the chain
-	if err := core.WriteTd(bc.chainDb, genesis.Hash(), genesis.NumberU64(), genesis.Difficulty()); err != nil {
-		log.Crit("Failed to write genesis block TD", "err", err)
-	}
-	if err := core.WriteBlock(bc.chainDb, genesis); err != nil {
-		log.Crit("Failed to write genesis block", "err", err)
-	}
-	bc.genesisBlock = genesis
-	bc.hc.SetGenesis(bc.genesisBlock.Header())
-	bc.hc.SetCurrentHeader(bc.genesisBlock.Header())
+	// // Prepare the genesis block and reinitialise the chain
+	// if err := core.WriteTd(bc.chainDb, genesis.Hash(), genesis.NumberU64(), genesis.Difficulty()); err != nil {
+	// 	log.Crit("Failed to write genesis block TD", "err", err)
+	// }
+	// if err := core.WriteBlock(bc.chainDb, genesis); err != nil {
+	// 	log.Crit("Failed to write genesis block", "err", err)
+	// }
+	// bc.genesisBlock = genesis
+	// bc.hc.SetGenesis(bc.genesisBlock.Header())
+	// bc.hc.SetCurrentHeader(bc.genesisBlock.Header())
 }
 
 // Accessors
@@ -218,34 +220,38 @@ func (bc *LightChain) State() (*state.StateDB, *state.StateDB, error) {
 // GetBody retrieves a block body (transactions and uncles) from the database
 // or ODR service by hash, caching it if found.
 func (self *LightChain) GetBody(ctx context.Context, hash common.Hash) (*types.Body, error) {
-	// Short circuit if the body's already in the cache, retrieve otherwise
-	if cached, ok := self.bodyCache.Get(hash); ok {
-		body := cached.(*types.Body)
-		return body, nil
-	}
-	body, err := GetBody(ctx, self.odr, hash, self.hc.GetBlockNumber(hash))
-	if err != nil {
-		return nil, err
-	}
-	// Cache the found body for next time and return
-	self.bodyCache.Add(hash, body)
-	return body, nil
+	// GLO: disable
+	// 	// Short circuit if the body's already in the cache, retrieve otherwise
+	// 	if cached, ok := self.bodyCache.Get(hash); ok {
+	// 		body := cached.(*types.Body)
+	// 		return body, nil
+	// 	}
+	// 	body, err := GetBody(ctx, self.odr, hash, self.hc.GetBlockNumber(hash))
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	// Cache the found body for next time and return
+	// 	self.bodyCache.Add(hash, body)
+	// 	return body, nil
+	return nil, nil
 }
 
 // GetBodyRLP retrieves a block body in RLP encoding from the database or
 // ODR service by hash, caching it if found.
 func (self *LightChain) GetBodyRLP(ctx context.Context, hash common.Hash) (rlp.RawValue, error) {
-	// Short circuit if the body's already in the cache, retrieve otherwise
-	if cached, ok := self.bodyRLPCache.Get(hash); ok {
-		return cached.(rlp.RawValue), nil
-	}
-	body, err := GetBodyRLP(ctx, self.odr, hash, self.hc.GetBlockNumber(hash))
-	if err != nil {
-		return nil, err
-	}
-	// Cache the found body for next time and return
-	self.bodyRLPCache.Add(hash, body)
-	return body, nil
+	// GLO: disable
+	// // Short circuit if the body's already in the cache, retrieve otherwise
+	// if cached, ok := self.bodyRLPCache.Get(hash); ok {
+	// 	return cached.(rlp.RawValue), nil
+	// }
+	// body, err := GetBodyRLP(ctx, self.odr, hash, self.hc.GetBlockNumber(hash))
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// // Cache the found body for next time and return
+	// self.bodyRLPCache.Add(hash, body)
+	// return body, nil
+	return nil, nil
 }
 
 // HasBlock checks if a block is fully present in the database or not, caching
@@ -274,7 +280,9 @@ func (self *LightChain) GetBlock(ctx context.Context, hash common.Hash, number u
 // GetBlockByHash retrieves a block from the database or ODR service by hash,
 // caching it if found.
 func (self *LightChain) GetBlockByHash(ctx context.Context, hash common.Hash) (*types.Block, error) {
-	return self.GetBlock(ctx, hash, self.hc.GetBlockNumber(hash))
+	// GLO: disable
+	// return self.GetBlock(ctx, hash, self.hc.GetBlockNumber(hash))
+	return nil, nil
 }
 
 // GetBlockByNumber retrieves a block from the database or ODR service by

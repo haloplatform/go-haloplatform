@@ -23,13 +23,13 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/bitutil"
+	// "github.com/ethereum/go-ethereum/common/bitutil"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
+	// "github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
 )
 
@@ -127,48 +127,50 @@ type ChtIndexerBackend struct {
 
 // NewBloomTrieIndexer creates a BloomTrie chain indexer
 func NewChtIndexer(db ethdb.Database, clientMode bool) *core.ChainIndexer {
-	var sectionSize, confirmReq uint64
-	if clientMode {
-		sectionSize = CHTFrequencyClient
-		confirmReq = HelperTrieConfirmations
-	} else {
-		sectionSize = CHTFrequencyServer
-		confirmReq = HelperTrieProcessConfirmations
-	}
-	idb := ethdb.NewTable(db, "chtIndex-")
-	backend := &ChtIndexerBackend{
-		diskdb:      db,
-		triedb:      trie.NewDatabase(ethdb.NewTable(db, ChtTablePrefix)),
-		sectionSize: sectionSize,
-	}
-	return core.NewChainIndexer(db, idb, backend, sectionSize, confirmReq, time.Millisecond*100, "cht")
-}
+	// GLO: disable
+	// 	var sectionSize, confirmReq uint64
+	// 	if clientMode {
+	// 		sectionSize = CHTFrequencyClient
+	// 		confirmReq = HelperTrieConfirmations
+	// 	} else {
+	// 		sectionSize = CHTFrequencyServer
+	// 		confirmReq = HelperTrieProcessConfirmations
+	// 	}
+	// 	idb := ethdb.NewTable(db, "chtIndex-")
+	// 	backend := &ChtIndexerBackend{
+	// 		diskdb:      db,
+	// 		triedb:      trie.NewDatabase(ethdb.NewTable(db, ChtTablePrefix)),
+	// 		sectionSize: sectionSize,
+	// 	}
+	// 	return core.NewChainIndexer(db, idb, backend, sectionSize, confirmReq, time.Millisecond*100, "cht")
+	// }
 
-// Reset implements core.ChainIndexerBackend
-func (c *ChtIndexerBackend) Reset(section uint64, lastSectionHead common.Hash) error {
-	var root common.Hash
-	if section > 0 {
-		root = GetChtRoot(c.diskdb, section-1, lastSectionHead)
-	}
-	var err error
-	c.trie, err = trie.New(root, c.triedb)
-	c.section = section
-	return err
-}
+	// // Reset implements core.ChainIndexerBackend
+	// func (c *ChtIndexerBackend) Reset(section uint64, lastSectionHead common.Hash) error {
+	// 	var root common.Hash
+	// 	if section > 0 {
+	// 		root = GetChtRoot(c.diskdb, section-1, lastSectionHead)
+	// 	}
+	// 	var err error
+	// 	c.trie, err = trie.New(root, c.triedb)
+	// 	c.section = section
+	// 	return err
+	// }
 
-// Process implements core.ChainIndexerBackend
-func (c *ChtIndexerBackend) Process(header *types.Header) {
-	hash, num := header.Hash(), header.Number.Uint64()
-	c.lastHash = hash
+	// // Process implements core.ChainIndexerBackend
+	// func (c *ChtIndexerBackend) Process(header *types.Header) {
+	// 	hash, num := header.Hash(), header.Number.Uint64()
+	// 	c.lastHash = hash
 
-	td := core.GetTd(c.diskdb, hash, num)
-	if td == nil {
-		panic(nil)
-	}
-	var encNumber [8]byte
-	binary.BigEndian.PutUint64(encNumber[:], num)
-	data, _ := rlp.EncodeToBytes(ChtNode{hash, td})
-	c.trie.Update(encNumber[:], data)
+	// 	td := core.GetTd(c.diskdb, hash, num)
+	// 	if td == nil {
+	// 		panic(nil)
+	// 	}
+	// 	var encNumber [8]byte
+	// 	binary.BigEndian.PutUint64(encNumber[:], num)
+	// 	data, _ := rlp.EncodeToBytes(ChtNode{hash, td})
+	// 	c.trie.Update(encNumber[:], data)
+	return nil
 }
 
 // Commit implements core.ChainIndexerBackend
@@ -264,43 +266,44 @@ func (b *BloomTrieIndexerBackend) Process(header *types.Header) {
 
 // Commit implements core.ChainIndexerBackend
 func (b *BloomTrieIndexerBackend) Commit() error {
-	var compSize, decompSize uint64
+	// GLO: disable
+	// var compSize, decompSize uint64
 
-	for i := uint(0); i < types.BloomBitLength; i++ {
-		var encKey [10]byte
-		binary.BigEndian.PutUint16(encKey[0:2], uint16(i))
-		binary.BigEndian.PutUint64(encKey[2:10], b.section)
-		var decomp []byte
-		for j := uint64(0); j < b.bloomTrieRatio; j++ {
-			data, err := core.GetBloomBits(b.diskdb, i, b.section*b.bloomTrieRatio+j, b.sectionHeads[j])
-			if err != nil {
-				return err
-			}
-			decompData, err2 := bitutil.DecompressBytes(data, int(b.parentSectionSize/8))
-			if err2 != nil {
-				return err2
-			}
-			decomp = append(decomp, decompData...)
-		}
-		comp := bitutil.CompressBytes(decomp)
+	// for i := uint(0); i < types.BloomBitLength; i++ {
+	// 	var encKey [10]byte
+	// 	binary.BigEndian.PutUint16(encKey[0:2], uint16(i))
+	// 	binary.BigEndian.PutUint64(encKey[2:10], b.section)
+	// 	var decomp []byte
+	// 	for j := uint64(0); j < b.bloomTrieRatio; j++ {
+	// 		data, err := core.GetBloomBits(b.diskdb, i, b.section*b.bloomTrieRatio+j, b.sectionHeads[j])
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		decompData, err2 := bitutil.DecompressBytes(data, int(b.parentSectionSize/8))
+	// 		if err2 != nil {
+	// 			return err2
+	// 		}
+	// 		decomp = append(decomp, decompData...)
+	// 	}
+	// 	comp := bitutil.CompressBytes(decomp)
 
-		decompSize += uint64(len(decomp))
-		compSize += uint64(len(comp))
-		if len(comp) > 0 {
-			b.trie.Update(encKey[:], comp)
-		} else {
-			b.trie.Delete(encKey[:])
-		}
-	}
-	root, err := b.trie.Commit(nil)
-	if err != nil {
-		return err
-	}
-	b.triedb.Commit(root, false)
+	// 	decompSize += uint64(len(decomp))
+	// 	compSize += uint64(len(comp))
+	// 	if len(comp) > 0 {
+	// 		b.trie.Update(encKey[:], comp)
+	// 	} else {
+	// 		b.trie.Delete(encKey[:])
+	// 	}
+	// }
+	// root, err := b.trie.Commit(nil)
+	// if err != nil {
+	// 	return err
+	// }
+	// b.triedb.Commit(root, false)
 
-	sectionHead := b.sectionHeads[b.bloomTrieRatio-1]
-	log.Info("Storing bloom trie", "section", b.section, "head", sectionHead, "root", root, "compression", float64(compSize)/float64(decompSize))
-	StoreBloomTrieRoot(b.diskdb, b.section, sectionHead, root)
+	// sectionHead := b.sectionHeads[b.bloomTrieRatio-1]
+	// log.Info("Storing bloom trie", "section", b.section, "head", sectionHead, "root", root, "compression", float64(compSize)/float64(decompSize))
+	// StoreBloomTrieRoot(b.diskdb, b.section, sectionHead, root)
 
 	return nil
 }

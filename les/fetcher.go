@@ -25,7 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/mclock"
 	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/core"
+	// "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/light"
 	"github.com/ethereum/go-ethereum/log"
@@ -241,127 +241,130 @@ func (f *lightFetcher) unregisterPeer(p *peer) {
 // announce processes a new announcement message received from a peer, adding new
 // nodes to the peer's block tree and removing old nodes if necessary
 func (f *lightFetcher) announce(p *peer, head *announceData) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
-	p.Log().Debug("Received new announcement", "number", head.Number, "hash", head.Hash, "reorg", head.ReorgDepth)
+	// GLO: disable
+	// f.lock.Lock()
+	// defer f.lock.Unlock()
+	// p.Log().Debug("Received new announcement", "number", head.Number, "hash", head.Hash, "reorg", head.ReorgDepth)
 
-	fp := f.peers[p]
-	if fp == nil {
-		p.Log().Debug("Announcement from unknown peer")
-		return
-	}
+	// fp := f.peers[p]
+	// if fp == nil {
+	// 	p.Log().Debug("Announcement from unknown peer")
+	// 	return
+	// }
 
-	if fp.lastAnnounced != nil && head.Td.Cmp(fp.lastAnnounced.td) <= 0 {
-		// announced tds should be strictly monotonic
-		p.Log().Debug("Received non-monotonic td", "current", head.Td, "previous", fp.lastAnnounced.td)
-		go f.pm.removePeer(p.id)
-		return
-	}
+	// if fp.lastAnnounced != nil && head.Td.Cmp(fp.lastAnnounced.td) <= 0 {
+	// 	// announced tds should be strictly monotonic
+	// 	p.Log().Debug("Received non-monotonic td", "current", head.Td, "previous", fp.lastAnnounced.td)
+	// 	go f.pm.removePeer(p.id)
+	// 	return
+	// }
 
-	n := fp.lastAnnounced
-	for i := uint64(0); i < head.ReorgDepth; i++ {
-		if n == nil {
-			break
-		}
-		n = n.parent
-	}
-	if n != nil {
-		// n is now the reorg common ancestor, add a new branch of nodes
-		// check if the node count is too high to add new nodes
-		locked := false
-		for uint64(fp.nodeCnt)+head.Number-n.number > maxNodeCount && fp.root != nil {
-			if !locked {
-				f.chain.LockChain()
-				defer f.chain.UnlockChain()
-				locked = true
-			}
-			// if one of root's children is canonical, keep it, delete other branches and root itself
-			var newRoot *fetcherTreeNode
-			for i, nn := range fp.root.children {
-				if core.GetCanonicalHash(f.pm.chainDb, nn.number) == nn.hash {
-					fp.root.children = append(fp.root.children[:i], fp.root.children[i+1:]...)
-					nn.parent = nil
-					newRoot = nn
-					break
-				}
-			}
-			fp.deleteNode(fp.root)
-			if n == fp.root {
-				n = newRoot
-			}
-			fp.root = newRoot
-			if newRoot == nil || !f.checkKnownNode(p, newRoot) {
-				fp.bestConfirmed = nil
-				fp.confirmedTd = nil
-			}
+	// n := fp.lastAnnounced
+	// for i := uint64(0); i < head.ReorgDepth; i++ {
+	// 	if n == nil {
+	// 		break
+	// 	}
+	// 	n = n.parent
+	// }
+	// if n != nil {
+	// 	// n is now the reorg common ancestor, add a new branch of nodes
+	// 	// check if the node count is too high to add new nodes
+	// 	locked := false
+	// 	for uint64(fp.nodeCnt)+head.Number-n.number > maxNodeCount && fp.root != nil {
+	// 		if !locked {
+	// 			f.chain.LockChain()
+	// 			defer f.chain.UnlockChain()
+	// 			locked = true
+	// 		}
+	// 		// if one of root's children is canonical, keep it, delete other branches and root itself
+	// 		var newRoot *fetcherTreeNode
+	// 		for i, nn := range fp.root.children {
+	// 			if core.GetCanonicalHash(f.pm.chainDb, nn.number) == nn.hash {
+	// 				fp.root.children = append(fp.root.children[:i], fp.root.children[i+1:]...)
+	// 				nn.parent = nil
+	// 				newRoot = nn
+	// 				break
+	// 			}
+	// 		}
+	// 		fp.deleteNode(fp.root)
+	// 		if n == fp.root {
+	// 			n = newRoot
+	// 		}
+	// 		fp.root = newRoot
+	// 		if newRoot == nil || !f.checkKnownNode(p, newRoot) {
+	// 			fp.bestConfirmed = nil
+	// 			fp.confirmedTd = nil
+	// 		}
 
-			if n == nil {
-				break
-			}
-		}
-		if n != nil {
-			for n.number < head.Number {
-				nn := &fetcherTreeNode{number: n.number + 1, parent: n}
-				n.children = append(n.children, nn)
-				n = nn
-				fp.nodeCnt++
-			}
-			n.hash = head.Hash
-			n.td = head.Td
-			fp.nodeByHash[n.hash] = n
-		}
-	}
-	if n == nil {
-		// could not find reorg common ancestor or had to delete entire tree, a new root and a resync is needed
-		if fp.root != nil {
-			fp.deleteNode(fp.root)
-		}
-		n = &fetcherTreeNode{hash: head.Hash, number: head.Number, td: head.Td}
-		fp.root = n
-		fp.nodeCnt++
-		fp.nodeByHash[n.hash] = n
-		fp.bestConfirmed = nil
-		fp.confirmedTd = nil
-	}
+	// 		if n == nil {
+	// 			break
+	// 		}
+	// 	}
+	// 	if n != nil {
+	// 		for n.number < head.Number {
+	// 			nn := &fetcherTreeNode{number: n.number + 1, parent: n}
+	// 			n.children = append(n.children, nn)
+	// 			n = nn
+	// 			fp.nodeCnt++
+	// 		}
+	// 		n.hash = head.Hash
+	// 		n.td = head.Td
+	// 		fp.nodeByHash[n.hash] = n
+	// 	}
+	// }
+	// if n == nil {
+	// 	// could not find reorg common ancestor or had to delete entire tree, a new root and a resync is needed
+	// 	if fp.root != nil {
+	// 		fp.deleteNode(fp.root)
+	// 	}
+	// 	n = &fetcherTreeNode{hash: head.Hash, number: head.Number, td: head.Td}
+	// 	fp.root = n
+	// 	fp.nodeCnt++
+	// 	fp.nodeByHash[n.hash] = n
+	// 	fp.bestConfirmed = nil
+	// 	fp.confirmedTd = nil
+	// }
 
-	f.checkKnownNode(p, n)
-	p.lock.Lock()
-	p.headInfo = head
-	fp.lastAnnounced = n
-	p.lock.Unlock()
-	f.checkUpdateStats(p, nil)
-	f.requestChn <- true
+	// f.checkKnownNode(p, n)
+	// p.lock.Lock()
+	// p.headInfo = head
+	// fp.lastAnnounced = n
+	// p.lock.Unlock()
+	// f.checkUpdateStats(p, nil)
+	// f.requestChn <- true
 }
 
 // peerHasBlock returns true if we can assume the peer knows the given block
 // based on its announcements
 func (f *lightFetcher) peerHasBlock(p *peer, hash common.Hash, number uint64) bool {
-	f.lock.Lock()
-	defer f.lock.Unlock()
+	// GLO: disable
+	// f.lock.Lock()
+	// defer f.lock.Unlock()
 
-	if f.syncing {
-		// always return true when syncing
-		// false positives are acceptable, a more sophisticated condition can be implemented later
-		return true
-	}
+	// if f.syncing {
+	// 	// always return true when syncing
+	// 	// false positives are acceptable, a more sophisticated condition can be implemented later
+	// 	return true
+	// }
 
-	fp := f.peers[p]
-	if fp == nil || fp.root == nil {
-		return false
-	}
+	// fp := f.peers[p]
+	// if fp == nil || fp.root == nil {
+	// 	return false
+	// }
 
-	if number >= fp.root.number {
-		// it is recent enough that if it is known, is should be in the peer's block tree
-		return fp.nodeByHash[hash] != nil
-	}
-	f.chain.LockChain()
-	defer f.chain.UnlockChain()
-	// if it's older than the peer's block tree root but it's in the same canonical chain
-	// as the root, we can still be sure the peer knows it
-	//
-	// when syncing, just check if it is part of the known chain, there is nothing better we
-	// can do since we do not know the most recent block hash yet
-	return core.GetCanonicalHash(f.pm.chainDb, fp.root.number) == fp.root.hash && core.GetCanonicalHash(f.pm.chainDb, number) == hash
+	// if number >= fp.root.number {
+	// 	// it is recent enough that if it is known, is should be in the peer's block tree
+	// 	return fp.nodeByHash[hash] != nil
+	// }
+	// f.chain.LockChain()
+	// defer f.chain.UnlockChain()
+	// // if it's older than the peer's block tree root but it's in the same canonical chain
+	// // as the root, we can still be sure the peer knows it
+	// //
+	// // when syncing, just check if it is part of the known chain, there is nothing better we
+	// // can do since we do not know the most recent block hash yet
+	// return core.GetCanonicalHash(f.pm.chainDb, fp.root.number) == fp.root.hash && core.GetCanonicalHash(f.pm.chainDb, number) == hash
+	return false
 }
 
 // requestAmount calculates the amount of headers to be downloaded starting

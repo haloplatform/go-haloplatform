@@ -162,52 +162,54 @@ func (txc txStateChanges) getLists() (mined []common.Hash, rollback []common.Has
 // and marks them as mined if necessary. It also stores block position in the db
 // and adds them to the received txStateChanges map.
 func (pool *TxPool) checkMinedTxs(ctx context.Context, hash common.Hash, number uint64, txc txStateChanges) error {
-	// If no transactions are pending, we don't care about anything
-	if len(pool.pending) == 0 {
-		return nil
-	}
-	block, err := GetBlock(ctx, pool.odr, hash, number)
-	if err != nil {
-		return err
-	}
-	// Gather all the local transaction mined in this block
-	list := pool.mined[hash]
-	for _, tx := range block.Transactions() {
-		if _, ok := pool.pending[tx.Hash()]; ok {
-			list = append(list, tx)
-		}
-	}
-	// If some transactions have been mined, write the needed data to disk and update
-	if list != nil {
-		// Retrieve all the receipts belonging to this block and write the loopup table
-		if _, err := GetBlockReceipts(ctx, pool.odr, hash, number); err != nil { // ODR caches, ignore results
-			return err
-		}
-		if err := core.WriteTxLookupEntries(pool.chainDb, block); err != nil {
-			return err
-		}
-		// Update the transaction pool's state
-		for _, tx := range list {
-			delete(pool.pending, tx.Hash())
-			txc.setState(tx.Hash(), true)
-		}
-		pool.mined[hash] = list
-	}
+	// GLO: disable
+	// // If no transactions are pending, we don't care about anything
+	// if len(pool.pending) == 0 {
+	// 	return nil
+	// }
+	// block, err := GetBlock(ctx, pool.odr, hash, number)
+	// if err != nil {
+	// 	return err
+	// }
+	// // Gather all the local transaction mined in this block
+	// list := pool.mined[hash]
+	// for _, tx := range block.Transactions() {
+	// 	if _, ok := pool.pending[tx.Hash()]; ok {
+	// 		list = append(list, tx)
+	// 	}
+	// }
+	// // If some transactions have been mined, write the needed data to disk and update
+	// if list != nil {
+	// 	// Retrieve all the receipts belonging to this block and write the loopup table
+	// 	if _, err := GetBlockReceipts(ctx, pool.odr, hash, number); err != nil { // ODR caches, ignore results
+	// 		return err
+	// 	}
+	// 	if err := core.WriteTxLookupEntries(pool.chainDb, block); err != nil {
+	// 		return err
+	// 	}
+	// 	// Update the transaction pool's state
+	// 	for _, tx := range list {
+	// 		delete(pool.pending, tx.Hash())
+	// 		txc.setState(tx.Hash(), true)
+	// 	}
+	// 	pool.mined[hash] = list
+	// }
 	return nil
 }
 
 // rollbackTxs marks the transactions contained in recently rolled back blocks
 // as rolled back. It also removes any positional lookup entries.
 func (pool *TxPool) rollbackTxs(hash common.Hash, txc txStateChanges) {
-	if list, ok := pool.mined[hash]; ok {
-		for _, tx := range list {
-			txHash := tx.Hash()
-			core.DeleteTxLookupEntry(pool.chainDb, txHash)
-			pool.pending[txHash] = tx
-			txc.setState(txHash, false)
-		}
-		delete(pool.mined, hash)
-	}
+	// GLO: disable
+	// if list, ok := pool.mined[hash]; ok {
+	// 	for _, tx := range list {
+	// 		txHash := tx.Hash()
+	// 		core.DeleteTxLookupEntry(pool.chainDb, txHash)
+	// 		pool.pending[txHash] = tx
+	// 		txc.setState(txHash, false)
+	// 	}
+	// 	delete(pool.mined, hash)
+	// }
 }
 
 // reorgOnNewHead sets a new head header, processing (and rolling back if necessary)
@@ -217,62 +219,64 @@ func (pool *TxPool) rollbackTxs(hash common.Hash, txc txStateChanges) {
 // at the latest checked block and still returns a valid txStateChanges, making it
 // possible to continue checking the missing blocks at the next chain head event
 func (pool *TxPool) reorgOnNewHead(ctx context.Context, newHeader *types.Header) (txStateChanges, error) {
-	txc := make(txStateChanges)
-	oldh := pool.chain.GetHeaderByHash(pool.head)
-	newh := newHeader
-	// find common ancestor, create list of rolled back and new block hashes
-	var oldHashes, newHashes []common.Hash
-	for oldh.Hash() != newh.Hash() {
-		if oldh.Number.Uint64() >= newh.Number.Uint64() {
-			oldHashes = append(oldHashes, oldh.Hash())
-			oldh = pool.chain.GetHeader(oldh.ParentHash, oldh.Number.Uint64()-1)
-		}
-		if oldh.Number.Uint64() < newh.Number.Uint64() {
-			newHashes = append(newHashes, newh.Hash())
-			newh = pool.chain.GetHeader(newh.ParentHash, newh.Number.Uint64()-1)
-			if newh == nil {
-				// happens when CHT syncing, nothing to do
-				newh = oldh
-			}
-		}
-	}
-	if oldh.Number.Uint64() < pool.clearIdx {
-		pool.clearIdx = oldh.Number.Uint64()
-	}
-	// roll back old blocks
-	for _, hash := range oldHashes {
-		pool.rollbackTxs(hash, txc)
-	}
-	pool.head = oldh.Hash()
-	// check mined txs of new blocks (array is in reversed order)
-	for i := len(newHashes) - 1; i >= 0; i-- {
-		hash := newHashes[i]
-		if err := pool.checkMinedTxs(ctx, hash, newHeader.Number.Uint64()-uint64(i), txc); err != nil {
-			return txc, err
-		}
-		pool.head = hash
-	}
+	// GLO: disable
+	// txc := make(txStateChanges)
+	// oldh := pool.chain.GetHeaderByHash(pool.head)
+	// newh := newHeader
+	// // find common ancestor, create list of rolled back and new block hashes
+	// var oldHashes, newHashes []common.Hash
+	// for oldh.Hash() != newh.Hash() {
+	// 	if oldh.Number.Uint64() >= newh.Number.Uint64() {
+	// 		oldHashes = append(oldHashes, oldh.Hash())
+	// 		oldh = pool.chain.GetHeader(oldh.ParentHash, oldh.Number.Uint64()-1)
+	// 	}
+	// 	if oldh.Number.Uint64() < newh.Number.Uint64() {
+	// 		newHashes = append(newHashes, newh.Hash())
+	// 		newh = pool.chain.GetHeader(newh.ParentHash, newh.Number.Uint64()-1)
+	// 		if newh == nil {
+	// 			// happens when CHT syncing, nothing to do
+	// 			newh = oldh
+	// 		}
+	// 	}
+	// }
+	// if oldh.Number.Uint64() < pool.clearIdx {
+	// 	pool.clearIdx = oldh.Number.Uint64()
+	// }
+	// // roll back old blocks
+	// for _, hash := range oldHashes {
+	// 	pool.rollbackTxs(hash, txc)
+	// }
+	// pool.head = oldh.Hash()
+	// // check mined txs of new blocks (array is in reversed order)
+	// for i := len(newHashes) - 1; i >= 0; i-- {
+	// 	hash := newHashes[i]
+	// 	if err := pool.checkMinedTxs(ctx, hash, newHeader.Number.Uint64()-uint64(i), txc); err != nil {
+	// 		return txc, err
+	// 	}
+	// 	pool.head = hash
+	// }
 
-	// clear old mined tx entries of old blocks
-	if idx := newHeader.Number.Uint64(); idx > pool.clearIdx+txPermanent {
-		idx2 := idx - txPermanent
-		if len(pool.mined) > 0 {
-			for i := pool.clearIdx; i < idx2; i++ {
-				hash := core.GetCanonicalHash(pool.chainDb, i)
-				if list, ok := pool.mined[hash]; ok {
-					hashes := make([]common.Hash, len(list))
-					for i, tx := range list {
-						hashes[i] = tx.Hash()
-					}
-					pool.relay.Discard(hashes)
-					delete(pool.mined, hash)
-				}
-			}
-		}
-		pool.clearIdx = idx2
-	}
+	// // clear old mined tx entries of old blocks
+	// if idx := newHeader.Number.Uint64(); idx > pool.clearIdx+txPermanent {
+	// 	idx2 := idx - txPermanent
+	// 	if len(pool.mined) > 0 {
+	// 		for i := pool.clearIdx; i < idx2; i++ {
+	// 			hash := core.GetCanonicalHash(pool.chainDb, i)
+	// 			if list, ok := pool.mined[hash]; ok {
+	// 				hashes := make([]common.Hash, len(list))
+	// 				for i, tx := range list {
+	// 					hashes[i] = tx.Hash()
+	// 				}
+	// 				pool.relay.Discard(hashes)
+	// 				delete(pool.mined, hash)
+	// 			}
+	// 		}
+	// 	}
+	// 	pool.clearIdx = idx2
+	// }
 
-	return txc, nil
+	// return txc, nil
+	return nil, nil
 }
 
 // blockCheckTimeout is the time limit for checking new blocks for mined

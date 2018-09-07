@@ -23,9 +23,9 @@ import (
 	"math"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
+	// "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
+	// "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/les/flowcontrol"
@@ -315,68 +315,68 @@ func (s *requestCostStats) update(msgCode, reqCnt, cost uint64) {
 }
 
 func (pm *ProtocolManager) blockLoop() {
-	pm.wg.Add(1)
-	headCh := make(chan core.ChainHeadEvent, 10)
-	headSub := pm.blockchain.SubscribeChainHeadEvent(headCh)
-	go func() {
-		var lastHead *types.Header
-		lastBroadcastTd := common.Big0
-		for {
-			select {
-			case ev := <-headCh:
-				peers := pm.peers.AllPeers()
-				if len(peers) > 0 {
-					header := ev.Block.Header()
-					hash := header.Hash()
-					number := header.Number.Uint64()
-					td := core.GetTd(pm.chainDb, hash, number)
-					if td != nil && td.Cmp(lastBroadcastTd) > 0 {
-						var reorg uint64
-						if lastHead != nil {
-							reorg = lastHead.Number.Uint64() - core.FindCommonAncestor(pm.chainDb, header, lastHead).Number.Uint64()
-						}
-						lastHead = header
-						lastBroadcastTd = td
+	// pm.wg.Add(1)
+	// headCh := make(chan core.ChainHeadEvent, 10)
+	// headSub := pm.blockchain.SubscribeChainHeadEvent(headCh)
+	// go func() {
+	// 	var lastHead *types.Header
+	// 	lastBroadcastTd := common.Big0
+	// 	for {
+	// 		select {
+	// 		case ev := <-headCh:
+	// 			peers := pm.peers.AllPeers()
+	// 			if len(peers) > 0 {
+	// 				header := ev.Block.Header()
+	// 				hash := header.Hash()
+	// 				number := header.Number.Uint64()
+	// 				td := core.GetTd(pm.chainDb, hash, number)
+	// 				if td != nil && td.Cmp(lastBroadcastTd) > 0 {
+	// 					var reorg uint64
+	// 					if lastHead != nil {
+	// 						reorg = lastHead.Number.Uint64() - core.FindCommonAncestor(pm.chainDb, header, lastHead).Number.Uint64()
+	// 					}
+	// 					lastHead = header
+	// 					lastBroadcastTd = td
 
-						log.Debug("Announcing block to peers", "number", number, "hash", hash, "td", td, "reorg", reorg)
+	// 					log.Debug("Announcing block to peers", "number", number, "hash", hash, "td", td, "reorg", reorg)
 
-						announce := announceData{Hash: hash, Number: number, Td: td, ReorgDepth: reorg}
-						// var (
-						// 	signed         bool
-						// 	signedAnnounce announceData
-						// )
+	// 					announce := announceData{Hash: hash, Number: number, Td: td, ReorgDepth: reorg}
+	// 					// var (
+	// 					// 	signed         bool
+	// 					// 	signedAnnounce announceData
+	// 					// )
 
-						for _, p := range peers {
-							switch p.announceType {
+	// 					for _, p := range peers {
+	// 						switch p.announceType {
 
-							case announceTypeSimple:
-								select {
-								case p.announceChn <- announce:
-								default:
-									pm.removePeer(p.id)
-								}
+	// 						case announceTypeSimple:
+	// 							select {
+	// 							case p.announceChn <- announce:
+	// 							default:
+	// 								pm.removePeer(p.id)
+	// 							}
 
-								// case announceTypeSigned:
-								// 	if !signed {
-								// 		signedAnnounce = announce
-								// 		signedAnnounce.sign(pm.server.privateKey)
-								// 		signed = true
-								// 	}
+	// 							// case announceTypeSigned:
+	// 							// 	if !signed {
+	// 							// 		signedAnnounce = announce
+	// 							// 		signedAnnounce.sign(pm.server.privateKey)
+	// 							// 		signed = true
+	// 							// 	}
 
-								// 	select {
-								// 	case p.announceChn <- signedAnnounce:
-								// 	default:
-								// 		pm.removePeer(p.id)
-								// 	}
-							}
-						}
-					}
-				}
-			case <-pm.quitSync:
-				headSub.Unsubscribe()
-				pm.wg.Done()
-				return
-			}
-		}
-	}()
+	// 							// 	select {
+	// 							// 	case p.announceChn <- signedAnnounce:
+	// 							// 	default:
+	// 							// 		pm.removePeer(p.id)
+	// 							// 	}
+	// 						}
+	// 					}
+	// 				}
+	// 			}
+	// 		case <-pm.quitSync:
+	// 			headSub.Unsubscribe()
+	// 			pm.wg.Done()
+	// 			return
+	// 		}
+	// 	}
+	// }()
 }
