@@ -253,4 +253,12 @@ func (s EthApiState) GetNonce(addr common.Address) uint64 {
 	return s.state.GetNonce(addr)
 }
 
-//func (s MinimalApiState) Error
+func (s EthApiState) Error() error {
+	//GLO: returning the error PrivateState
+	err := s.privateState.Error()
+	if err != nil {
+		return err
+	}
+	//GLO: returing the error in PublicState
+	return s.state.Error()
+}
