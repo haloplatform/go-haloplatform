@@ -95,7 +95,7 @@ func (service *RaftService) Stop() error {
 	service.minter.stop()
 	service.eventMux.Stop()
 
-	service.chainDb.Close()
+	/// Don't close chainDb because EthereumService already did it.
 
 	log.Info("Raft stopped")
 	return nil
