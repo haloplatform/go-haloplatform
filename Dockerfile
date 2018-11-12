@@ -7,5 +7,5 @@ RUN chmod +x /go-ethereum/scripts/startup.sh \
     /go-ethereum/scripts/full-node-testnet-start.sh \
     /go-ethereum/scripts/full-node-mainnet-start.sh  \
     /go-ethereum/scripts/full-node-devnet-start.sh
-EXPOSE 9565 9555 50607
+EXPOSE 9565 9566 50607
 ENTRYPOINT ["/go-ethereum/scripts/startup.sh"]
