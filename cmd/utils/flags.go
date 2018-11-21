@@ -997,7 +997,7 @@ func setMasternodeConfig(ctx *cli.Context, cfg *mn.Config) {
 
 	cfg.InstAddr = common.HexToAddress(inst_addr)
 	cfg.RewardAddr = common.HexToAddress(reward_addr)
-	cfg.PingInterVal = 10 // Fixed at 10 minutes
+	cfg.PingInterVal = 60 // Fixed at 60 minutes
 
 	if !ctx.GlobalIsSet(PingKeyFlag.Name) {
 		Fatalf("PING requires private key, option: %q", PingKeyFlag.Name)
