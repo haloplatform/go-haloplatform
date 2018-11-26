@@ -27,6 +27,7 @@ import (
 	"github.com/eapache/channels"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -359,6 +360,11 @@ func (minter *minter) mintNewBlock() {
 	/// When having MN reward, miner is the address where the reward is added
 	work := minter.createWork(rewardAddr)
 	transactions := minter.getTransactions()
+
+	/// Haloplatform coin-split
+	if minter.config.SplitForkBlock != nil && minter.config.SplitForkBlock.Cmp(work.header.Number) == 0 {
+		misc.ApplyCoinSplitHardFork(work.publicState)
+	}
 
 	committedTxes, publicReceipts, privateReceipts, logs := work.commitTransactions(transactions, minter.chain)
 	txCount := len(committedTxes)

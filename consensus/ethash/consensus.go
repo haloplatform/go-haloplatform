@@ -570,7 +570,12 @@ var (
 func AccumulateRewards(config *params.ChainConfig, state *state.StateDB, header *types.Header, uncles []*types.Header) {
 	zeroAddr := common.HexToAddress("0x0000000000000000000000000000000000000000")
 	if bytes.Compare(zeroAddr.Bytes(), header.Coinbase.Bytes()) != 0 {
-		// Send to address where masternode rewards are accumulated
-		state.AddBalance(header.Coinbase, params.MasterNodeReward)
+		if config.IsCoinSplitFork(header.Number) {
+			// Add reward after coin-split hard-fork
+			state.AddBalance(header.Coinbase, params.MasterNodeSplitReward)
+		} else {
+			// Send to address where masternode rewards are accumulated
+			state.AddBalance(header.Coinbase, params.MasterNodeReward)
+		}
 	}
 }

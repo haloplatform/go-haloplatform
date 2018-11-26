@@ -144,6 +144,8 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 
 	// Set reward value: 38 Halos
 	params.MasterNodeReward.SetString(params.MasterNodeRewardString, 10)
+	// Set reward value: 30400 Halos for coin-split hard-fork
+	params.MasterNodeSplitReward.SetString(params.MasterNodeSplitRewardString, 10)
 
 	return stack, cfg
 }
