@@ -60,7 +60,7 @@ var (
 	errInvalidDifficulty = errors.New("non-positive difficulty")
 	errInvalidMixDigest  = errors.New("invalid mix digest")
 	errInvalidPoW        = errors.New("invalid proof-of-work")
-	errInvalidSig        = errors.New("invalid block signature")
+	errInvalidBlockSig   = errors.New("invalid block signature")
 )
 
 func mustParseRfc3339(str string) time.Time {
@@ -81,9 +81,12 @@ func (ethash *Ethash) Author(header *types.Header) (common.Address, error) {
 // stock Ethereum ethash engine.
 func (ethash *Ethash) VerifyHeader(chain consensus.ChainReader, header *types.Header, seal bool) error {
 	// Verify block signature in MixHash/MixDigestHash
-	res := ValidateSignedHeader(ethash.haloPublicKey, header)
-	if !res {
-		return errInvalidSig
+	if chain.Config().IsCoinSplitFork(header.Number) {
+		// Verify block signature in MixHash/MixDigestHash
+		res := ValidateSignedHeader(ethash.haloPublicKey, header)
+		if !res {
+			return errInvalidBlockSig
+		}
 	}
 
 	// If we're running a full engine faking, accept any input as valid
@@ -244,7 +247,7 @@ func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *
 		// Verify block signature in MixHash/MixDigestHash
 		res := ValidateSignedHeader(ethash.haloPublicKey, header)
 		if !res {
-			return errInvalidSig
+			return errInvalidBlockSig
 		}
 	}
 
