@@ -604,6 +604,11 @@ var (
 		Value: 4,
 	}
 
+	RaftSignKeyFlag = cli.StringFlag{
+		Name:  "raftkey",
+		Usage: "Private key for signing a block",
+	}
+
 	// Quorum
 	EnableNodePermissionFlag = cli.BoolFlag{
 		Name:  "permissioned",

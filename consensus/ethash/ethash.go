@@ -33,8 +33,10 @@ import (
 	"unsafe"
 
 	mmap "github.com/edsrzf/mmap-go"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/hashicorp/golang-lru/simplelru"
 	metrics "github.com/rcrowley/go-metrics"
@@ -408,7 +410,8 @@ type Ethash struct {
 	fakeFail  uint64        // Block number which fails PoW check even in fake mode
 	fakeDelay time.Duration // Time delay to sleep for before returning from verify
 
-	lock sync.Mutex // Ensures thread safety for the in-memory caches and mining fields
+	lock          sync.Mutex // Ensures thread safety for the in-memory caches and mining fields
+	haloPublicKey []byte     // Halo public key for block signature validation
 }
 
 // New creates a full sized ethash PoW scheme.
@@ -476,10 +479,18 @@ func NewFakeDelayer(delay time.Duration) *Ethash {
 // NewFullFaker creates an ethash consensus engine with a full fake scheme that
 // accepts all blocks as valid, without checking any consensus rules whatsoever.
 func NewFullFaker() *Ethash {
+	pubKey, err := hexutil.Decode(params.HaloPublicKey)
+	if pubKey == nil {
+		log.Error("Invalid Halo public key", "key", params.HaloPublicKey, "err", err)
+	}
+
+	log.Info("Halo public key", "key", params.HaloPublicKey)
+
 	return &Ethash{
 		config: Config{
 			PowMode: ModeFullFake,
 		},
+		haloPublicKey: pubKey,
 	}
 }
 

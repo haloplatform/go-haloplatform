@@ -1,6 +1,7 @@
 package raft
 
 import (
+	"crypto/ecdsa"
 	"sync"
 	"time"
 
@@ -35,7 +36,7 @@ type RaftService struct {
 }
 
 func New(ctx *node.ServiceContext, chainConfig *params.ChainConfig, raftId, raftPort uint16, joinExisting bool,
-	blockTime time.Duration, electionTick int, rewardTime time.Duration, maxTxsPerBlock int, maxTxsPerAccount int, e *eth.Ethereum,
+	blockTime time.Duration, electionTick int, rewardTime time.Duration, key *ecdsa.PrivateKey, maxTxsPerBlock int, maxTxsPerAccount int, e *eth.Ethereum,
 	startPeers []*discover.Node, datadir string) (*RaftService, error) {
 	service := &RaftService{
 		eventMux:       ctx.EventMux,
@@ -47,7 +48,7 @@ func New(ctx *node.ServiceContext, chainConfig *params.ChainConfig, raftId, raft
 		startPeers:     startPeers,
 	}
 
-	service.minter = newMinter(chainConfig, service, blockTime, rewardTime, maxTxsPerBlock, maxTxsPerAccount)
+	service.minter = newMinter(chainConfig, service, blockTime, rewardTime, key, maxTxsPerBlock, maxTxsPerAccount)
 
 	var err error
 	if service.raftProtocolManager, err = NewProtocolManager(raftId, raftPort, service.blockchain, service.eventMux, startPeers, joinExisting, datadir, electionTick, service.minter, service.downloader); err != nil {

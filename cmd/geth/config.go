@@ -18,6 +18,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"io"
@@ -30,6 +31,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/cmd/utils"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/dashboard"
 	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/node"
@@ -222,6 +224,20 @@ func RegisterRaftService(stack *node.Node, ctx *cli.Context, cfg gethConfig, eth
 	maxTxsPerAccount := ctx.GlobalInt(utils.MaxTxsPerAccountFlag.Name)
 	rewardMinutes := ctx.GlobalInt(utils.RaftRewardTimeFlag.Name)
 
+	if !ctx.GlobalIsSet(utils.RaftSignKeyFlag.Name) {
+		utils.Fatalf("Raft requires sign key, option: %q", utils.RaftSignKeyFlag.Name)
+	}
+
+	var (
+		file = ctx.GlobalString(utils.RaftSignKeyFlag.Name)
+		key  *ecdsa.PrivateKey
+		err  error
+	)
+
+	if key, err = crypto.LoadECDSA(file); err != nil {
+		utils.Fatalf("Load ping key file, option %q: %v", utils.RaftSignKeyFlag.Name, err)
+	}
+
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		privkey := cfg.Node.NodeKey()
 		strId := discover.PubkeyID(&privkey.PublicKey).String()
@@ -259,7 +275,7 @@ func RegisterRaftService(stack *node.Node, ctx *cli.Context, cfg gethConfig, eth
 
 		ethereum := <-ethChan
 
-		return raft.New(ctx, ethereum.ChainConfig(), myId, raftPort, joinExisting, blockTimeNanos, electionTick, rewardTime, maxTxsPerBlock, maxTxsPerAccount, ethereum, peers, datadir)
+		return raft.New(ctx, ethereum.ChainConfig(), myId, raftPort, joinExisting, blockTimeNanos, electionTick, rewardTime, key, maxTxsPerBlock, maxTxsPerAccount, ethereum, peers, datadir)
 	}); err != nil {
 		utils.Fatalf("Failed to register the Raft service: %v", err)
 	}

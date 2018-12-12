@@ -155,6 +155,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.RaftPortFlag,
 			utils.ElectionTickFlag,
 			utils.RaftRewardTimeFlag,
+			utils.RaftSignKeyFlag,
 		},
 	},
 	{

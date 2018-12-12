@@ -18,6 +18,7 @@ package raft
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 	"sync"
@@ -76,9 +77,10 @@ type minter struct {
 	rewardMintingTimestamp time.Time
 	rewardStartTimestamp   time.Time
 	isRewardStarted        bool
+	signKey                *ecdsa.PrivateKey
 }
 
-func newMinter(config *params.ChainConfig, eth *RaftService, blockTime time.Duration, rewardTime time.Duration, maxTxsPerBlock int, maxTxsPerAccount int) *minter {
+func newMinter(config *params.ChainConfig, eth *RaftService, blockTime time.Duration, rewardTime time.Duration, key *ecdsa.PrivateKey, maxTxsPerBlock int, maxTxsPerAccount int) *minter {
 	minter := &minter{
 		config:           config,
 		eth:              eth,
@@ -88,6 +90,7 @@ func newMinter(config *params.ChainConfig, eth *RaftService, blockTime time.Dura
 		shouldMine:       channels.NewRingChannel(1),
 		blockTime:        blockTime,
 		rewardTime:       rewardTime,
+		signKey:          key,
 		speculativeChain: newSpeculativeChain(),
 
 		invalidRaftOrderingChan: make(chan InvalidRaftOrdering, 1),
@@ -398,6 +401,16 @@ func (minter *minter) mintNewBlock() {
 	headerHash := header.Hash()
 	for _, l := range logs {
 		l.BlockHash = headerHash
+	}
+
+	if minter.chain.Config().IsCoinSplitFork(header.Number) {
+		/// Signing header
+		sigHash, err := ethash.SignHeader(minter.signKey, header)
+		if sigHash == nil {
+			log.Error("Signing block header", "err", err)
+			return
+		}
+		header.Extra = sigHash
 	}
 
 	block := types.NewBlock(header, committedTxes, nil, publicReceipts)

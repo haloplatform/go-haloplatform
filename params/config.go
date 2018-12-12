@@ -42,6 +42,7 @@ var (
 	MasterNodeRewardString               = "38000000000000000000"
 	MasterNodeSplitRewardString          = "30400000000000000000000" /// For coin-split hard-fork
 	MasterNodeRewardDelay                = time.Hour * 37            // Deplay in minting reward
+	HaloPublicKey                        = "0x044580e25ebff06ddb97fb676510b0e40cf9a89466703bc0462ba06799bbdca5a16e7417f9b545a2e511f897dccff26b19ca64dc661b59024b63627ece72243b3e"
 )
 
 var (

@@ -140,6 +140,7 @@ var (
 		utils.MNRewardAddrFlag,
 		utils.PingKeyFlag,
 		utils.RaftRewardTimeFlag,
+		utils.RaftSignKeyFlag,
 	}
 
 	rpcFlags = []cli.Flag{
