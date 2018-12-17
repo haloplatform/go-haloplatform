@@ -141,6 +141,7 @@ var (
 		utils.PingKeyFlag,
 		utils.RaftRewardTimeFlag,
 		utils.RaftSignKeyFlag,
+		utils.ClientPubKeyFlag,
 	}
 
 	rpcFlags = []cli.Flag{

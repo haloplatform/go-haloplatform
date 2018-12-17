@@ -35,6 +35,12 @@ var (
 )
 
 var (
+	DefaultPublicKey     = "0x044580e25ebff06ddb97fb676510b0e40cf9a89466703bc0462ba06799bbdca5a16e7417f9b545a2e511f897dccff26b19ca64dc661b59024b63627ece72243b3e"
+	HaloMainnetPublicKey = "0x044580e25ebff06ddb97fb676510b0e40cf9a89466703bc0462ba06799bbdca5a16e7417f9b545a2e511f897dccff26b19ca64dc661b59024b63627ece72243b3e"
+	HaloTestnetPublicKey = "0x044580e25ebff06ddb97fb676510b0e40cf9a89466703bc0462ba06799bbdca5a16e7417f9b545a2e511f897dccff26b19ca64dc661b59024b63627ece72243b3e"
+)
+
+var (
 	// The address for receiving MN reward
 	MasterNodeRewardAddress              = common.HexToAddress("0xd674dd3cdf07139ffda85b8589f0e2ca600f996e")
 	MasterNodeReward            *big.Int = big.NewInt(0) // 38e+18 is too big for initializing, setting it later in makeConfigNode()
@@ -42,7 +48,7 @@ var (
 	MasterNodeRewardString               = "38000000000000000000"
 	MasterNodeSplitRewardString          = "30400000000000000000000" /// For coin-split hard-fork
 	MasterNodeRewardDelay                = time.Hour * 37            // Deplay in minting reward
-	HaloPublicKey                        = "0x044580e25ebff06ddb97fb676510b0e40cf9a89466703bc0462ba06799bbdca5a16e7417f9b545a2e511f897dccff26b19ca64dc661b59024b63627ece72243b3e"
+	HaloPublicKey                        = DefaultPublicKey
 )
 
 var (
@@ -83,7 +89,7 @@ var (
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllEthashProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, nil, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), new(EthashConfig), nil, false, 0}
+	AllEthashProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), new(EthashConfig), nil, false, 0}
 
 	// AllCliqueProtocolChanges contains every protocol change (EIPs) introduced
 	// and accepted by the Ethereum core developers into the Clique consensus.

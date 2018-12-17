@@ -615,6 +615,11 @@ var (
 		Usage: "If enabled, the node will allow only a defined list of nodes to connect",
 	}
 
+	ClientPubKeyFlag = cli.StringFlag{
+		Name:  "pubkey",
+		Usage: "Public key for block validation, hex string",
+	}
+
 	// Masternode
 	MNInstanceAddrFlag = cli.StringFlag{
 		Name:  "mn",
@@ -1028,6 +1033,24 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	setHTTP(ctx, cfg)
 	setWS(ctx, cfg)
 	setNodeUserIdent(ctx, cfg)
+
+	/// Public key
+	switch {
+	// Mainnet
+	case cfg.P2P.NetworkId == params.HaloMainnetNetworkId:
+		params.HaloPublicKey = params.HaloMainnetPublicKey
+	// Testnet
+	case cfg.P2P.NetworkId == params.HaloTestnetNetworkId:
+		params.HaloPublicKey = params.HaloTestnetPublicKey
+	default:
+		{
+			// Using the setting from cmd. Otherwise, using the default
+			if ctx.GlobalIsSet(ClientPubKeyFlag.Name) {
+				// Validate the hex string in Ethash. Don't do here
+				params.HaloPublicKey = ctx.GlobalString(ClientPubKeyFlag.Name)
+			}
+		}
+	}
 
 	switch {
 	case ctx.GlobalIsSet(DataDirFlag.Name):

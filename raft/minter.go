@@ -366,7 +366,17 @@ func (minter *minter) mintNewBlock() {
 
 	/// Haloplatform coin-split
 	if minter.config.SplitForkBlock != nil && minter.config.SplitForkBlock.Cmp(work.header.Number) == 0 {
-		misc.ApplyCoinSplitHardFork(work.publicState)
+		switch {
+		// Mainnet
+		case minter.config.ChainId.Cmp(big.NewInt(int64(params.HaloMainnetNetworkId))) == 0:
+			misc.ApplyMainnetCoinSplitHardFork(work.publicState)
+		// Testnet
+		case minter.config.ChainId.Cmp(big.NewInt(int64(params.HaloTestnetNetworkId))) == 0:
+			misc.ApplyTestnetCoinSplitHardFork(work.publicState)
+		// Local development
+		default:
+			misc.ApplyLocalCoinSplitHardFork(work.publicState)
+		}
 	}
 
 	committedTxes, publicReceipts, privateReceipts, logs := work.commitTransactions(transactions, minter.chain)

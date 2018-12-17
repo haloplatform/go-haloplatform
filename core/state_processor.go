@@ -17,6 +17,8 @@
 package core
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/misc"
@@ -72,7 +74,16 @@ func (p *StateProcessor) Process(block *types.Block, statedb, privateState *stat
 
 	/// Haloplatform coin-split
 	if p.config.SplitForkBlock != nil && p.config.SplitForkBlock.Cmp(block.Number()) == 0 {
-		misc.ApplyCoinSplitHardFork(statedb)
+		switch {
+		// Mainnet
+		case p.config.ChainId.Cmp(big.NewInt(int64(params.HaloMainnetNetworkId))) == 0:
+			misc.ApplyMainnetCoinSplitHardFork(statedb)
+		// Testnet
+		case p.config.ChainId.Cmp(big.NewInt(int64(params.HaloTestnetNetworkId))) == 0:
+			misc.ApplyTestnetCoinSplitHardFork(statedb)
+		default:
+			misc.ApplyLocalCoinSplitHardFork(statedb)
+		}
 	}
 
 	// Iterate over and process the individual transactions

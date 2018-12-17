@@ -481,7 +481,13 @@ func NewFakeDelayer(delay time.Duration) *Ethash {
 func NewFullFaker() *Ethash {
 	pubKey, err := hexutil.Decode(params.HaloPublicKey)
 	if pubKey == nil {
-		log.Error("Invalid Halo public key", "key", params.HaloPublicKey, "err", err)
+		log.Crit("Invalid Halo public key", "key", params.HaloPublicKey, "err", err)
+		return nil
+	}
+
+	if len(pubKey) != 65 {
+		log.Crit("Invalid Halo public key length", "len", len(pubKey), "key", params.HaloPublicKey)
+		return nil
 	}
 
 	log.Info("Halo public key", "key", params.HaloPublicKey)
