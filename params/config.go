@@ -42,7 +42,7 @@ var (
 
 var (
 	// The address for receiving MN reward
-	MasterNodeRewardAddress              = common.HexToAddress("0xd674dd3cdf07139ffda85b8589f0e2ca600f996e")
+	MasterNodeRewardAddress              = common.HexToAddress("0xece3c9e6021038b17941406276949f09cf3edb09")
 	MasterNodeReward            *big.Int = big.NewInt(0) // 38e+18 is too big for initializing, setting it later in makeConfigNode()
 	MasterNodeSplitReward       *big.Int = big.NewInt(0) // 30400e+18 is too big for initializing, setting it later in makeConfigNode()
 	MasterNodeRewardString               = "38000000000000000000"
@@ -74,7 +74,7 @@ var (
 		HomesteadBlock:  nil,
 		DAOForkBlock:    nil,
 		DAOForkSupport:  false,
-		SplitForkBlock:  nil, /// T.B.D
+		SplitForkBlock:  big.NewInt(39000),
 		EIP150Block:     nil,
 		EIP155Block:     nil,
 		EIP158Block:     nil,
