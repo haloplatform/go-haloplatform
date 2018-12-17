@@ -700,8 +700,7 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 		} else {
 			urls = strings.Split(ctx.GlobalString(BootnodesFlag.Name), ",")
 		}
-	case ctx.GlobalBool(TestnetFlag.Name):
-	case ctx.GlobalUint64(NetworkIdFlag.Name) == params.HaloTestnetNetworkId:
+	case ctx.GlobalBool(TestnetFlag.Name) || ctx.GlobalUint64(NetworkIdFlag.Name) == params.HaloTestnetNetworkId:
 		urls = params.TestnetBootnodes
 		log.Debug("Testnet bootnode", "boot", urls)
 		// case ctx.GlobalBool(RinkebyFlag.Name):
@@ -970,7 +969,13 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 		cfg.DiscoveryV5 = false
 	}
 	/// NetworkID for filtering P2P messages
-	cfg.NetworkId = ctx.GlobalUint64(NetworkIdFlag.Name)
+	cfg.NetworkId = params.HaloMainnetNetworkId
+	if ctx.GlobalIsSet(NetworkIdFlag.Name) {
+		cfg.NetworkId = ctx.GlobalUint64(NetworkIdFlag.Name)
+	}
+	if ctx.GlobalBool(TestnetFlag.Name) {
+		cfg.NetworkId = params.HaloTestnetNetworkId
+	}
 
 	if ctx.GlobalBool(RaftModeFlag.Name) {
 		cfg.PeerType = p2p.NODE_TYPE_RAFT
