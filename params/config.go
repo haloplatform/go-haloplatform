@@ -36,13 +36,13 @@ var (
 
 var (
 	DefaultPublicKey     = "0x044580e25ebff06ddb97fb676510b0e40cf9a89466703bc0462ba06799bbdca5a16e7417f9b545a2e511f897dccff26b19ca64dc661b59024b63627ece72243b3e"
-	HaloMainnetPublicKey = "0x044580e25ebff06ddb97fb676510b0e40cf9a89466703bc0462ba06799bbdca5a16e7417f9b545a2e511f897dccff26b19ca64dc661b59024b63627ece72243b3e"
+	HaloMainnetPublicKey = "0x0434df8d36e19f6820a7866c088b214adda5259e94ed931c04e2f211dc4fc0e8c82ab618dda79bebcad8e43e17957ed10bae4b9bed5fe044bf0ca8d397b2eea9b1"
 	HaloTestnetPublicKey = "0x044580e25ebff06ddb97fb676510b0e40cf9a89466703bc0462ba06799bbdca5a16e7417f9b545a2e511f897dccff26b19ca64dc661b59024b63627ece72243b3e"
 )
 
 var (
 	// The address for receiving MN reward
-	MasterNodeRewardAddress              = common.HexToAddress("0xece3c9e6021038b17941406276949f09cf3edb09")
+	MasterNodeRewardAddress              = common.HexToAddress("0x277ab01693c3d02939df1a90f8e78048e1379868")
 	MasterNodeReward            *big.Int = big.NewInt(0) // 38e+18 is too big for initializing, setting it later in makeConfigNode()
 	MasterNodeSplitReward       *big.Int = big.NewInt(0) // 30400e+18 is too big for initializing, setting it later in makeConfigNode()
 	MasterNodeRewardString               = "38000000000000000000"
@@ -58,7 +58,7 @@ var (
 		HomesteadBlock:  nil,
 		DAOForkBlock:    nil,
 		DAOForkSupport:  false,
-		SplitForkBlock:  nil, /// T.B.D: We will fix it when doing hardfork
+		SplitForkBlock:  big.NewInt(33226666),
 		EIP150Block:     nil,
 		EIP155Block:     nil,
 		EIP158Block:     nil,
