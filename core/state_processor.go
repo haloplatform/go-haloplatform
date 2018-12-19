@@ -17,6 +17,8 @@
 package core
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/misc"
@@ -63,10 +65,27 @@ func (p *StateProcessor) Process(block *types.Block, statedb, privateState *stat
 
 		privateReceipts types.Receipts
 	)
-	// Mutate the the block and state according to any hard-fork specs
-	if p.config.DAOForkSupport && p.config.DAOForkBlock != nil && p.config.DAOForkBlock.Cmp(block.Number()) == 0 {
-		misc.ApplyDAOHardFork(statedb)
+
+	/// Haloplatform disable: Don't need to check for DAO
+	// // Mutate the the block and state according to any hard-fork specs
+	// if p.config.DAOForkSupport && p.config.DAOForkBlock != nil && p.config.DAOForkBlock.Cmp(block.Number()) == 0 {
+	// 	misc.ApplyDAOHardFork(statedb)
+	// }
+
+	/// Haloplatform coin-split
+	if p.config.SplitForkBlock != nil && p.config.SplitForkBlock.Cmp(block.Number()) == 0 {
+		switch {
+		// Mainnet
+		case p.config.ChainId.Cmp(big.NewInt(int64(params.HaloMainnetNetworkId))) == 0:
+			misc.ApplyMainnetCoinSplitHardFork(statedb)
+		// Testnet
+		case p.config.ChainId.Cmp(big.NewInt(int64(params.HaloTestnetNetworkId))) == 0:
+			misc.ApplyTestnetCoinSplitHardFork(statedb)
+		default:
+			misc.ApplyLocalCoinSplitHardFork(statedb)
+		}
 	}
+
 	// Iterate over and process the individual transactions
 	for i, tx := range block.Transactions() {
 		statedb.Prepare(tx.Hash(), block.Hash(), i)

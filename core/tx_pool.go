@@ -637,7 +637,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if err != nil {
 		return err
 	}
-	if !isQuorum && tx.Gas() < intrGas {
+	if tx.Gas() < intrGas {
 		return ErrIntrinsicGas
 	}
 	return nil
@@ -1171,8 +1171,8 @@ func (pool *TxPool) demoteUnexecutables() {
 
 /// With remote txn on full-MN, we need to replay it to other peers only.
 func (pool *TxPool) ReplayRemoteTx(txs []*types.Transaction) {
-	pool.mu.RLock()
-	defer pool.mu.RUnlock()
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 
 	/// Ignore a known txn (it's local txn with going back from other nodes)
 	for _, tx := range txs {

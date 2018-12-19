@@ -18,6 +18,7 @@ package ethash
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
@@ -30,6 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	set "gopkg.in/fatih/set.v0"
 )
@@ -58,6 +60,7 @@ var (
 	errInvalidDifficulty = errors.New("non-positive difficulty")
 	errInvalidMixDigest  = errors.New("invalid mix digest")
 	errInvalidPoW        = errors.New("invalid proof-of-work")
+	errInvalidBlockSig   = errors.New("invalid block signature")
 )
 
 func mustParseRfc3339(str string) time.Time {
@@ -77,6 +80,15 @@ func (ethash *Ethash) Author(header *types.Header) (common.Address, error) {
 // VerifyHeader checks whether a header conforms to the consensus rules of the
 // stock Ethereum ethash engine.
 func (ethash *Ethash) VerifyHeader(chain consensus.ChainReader, header *types.Header, seal bool) error {
+	// Verify block signature in MixHash/MixDigestHash
+	if chain.Config().IsCoinSplitFork(header.Number) {
+		// Verify block signature in MixHash/MixDigestHash
+		res := ValidateSignedHeader(ethash.haloPublicKey, header)
+		if !res {
+			return errInvalidBlockSig
+		}
+	}
+
 	// If we're running a full engine faking, accept any input as valid
 	if ethash.config.PowMode == ModeFullFake {
 		return nil
@@ -98,14 +110,14 @@ func (ethash *Ethash) VerifyHeader(chain consensus.ChainReader, header *types.He
 // concurrently. The method returns a quit channel to abort the operations and
 // a results channel to retrieve the async verifications.
 func (ethash *Ethash) VerifyHeaders(chain consensus.ChainReader, headers []*types.Header, seals []bool) (chan<- struct{}, <-chan error) {
-	// If we're running a full engine faking, accept any input as valid
-	if ethash.config.PowMode == ModeFullFake || len(headers) == 0 {
-		abort, results := make(chan struct{}), make(chan error, len(headers))
-		for i := 0; i < len(headers); i++ {
-			results <- nil
-		}
-		return abort, results
-	}
+	// // If we're running a full engine faking, accept any input as valid
+	// if ethash.config.PowMode == ModeFullFake || len(headers) == 0 {
+	// 	abort, results := make(chan struct{}), make(chan error, len(headers))
+	// 	for i := 0; i < len(headers); i++ {
+	// 		results <- nil
+	// 	}
+	// 	return abort, results
+	// }
 
 	// Spawn as many workers as allowed threads
 	workers := runtime.GOMAXPROCS(0)
@@ -231,6 +243,19 @@ func (ethash *Ethash) VerifyUncles(chain consensus.ChainReader, block *types.Blo
 // stock Ethereum ethash engine.
 // See YP section 4.3.4. "Block Header Validity"
 func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *types.Header, uncle bool, seal bool) error {
+	if chain.Config().IsCoinSplitFork(header.Number) {
+		// Verify block signature in MixHash/MixDigestHash
+		res := ValidateSignedHeader(ethash.haloPublicKey, header)
+		if !res {
+			return errInvalidBlockSig
+		}
+	}
+
+	// If we're running a full engine faking, accept any input as valid
+	if ethash.config.PowMode == ModeFullFake {
+		return nil
+	}
+
 	// Ensure that the header's extra-data section is of a reasonable size
 	maximumExtraDataSize := params.GetMaximumExtraDataSize(chain.Config().IsQuorum)
 	if uint64(len(header.Extra)) > maximumExtraDataSize {
@@ -265,6 +290,7 @@ func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *
 	if header.Time.Cmp(parent.Time) <= 0 {
 		return errZeroBlockTime
 	}
+
 	// Verify the block's difficulty based in it's timestamp and parent's difficulty
 	expected := ethash.CalcDifficulty(chain, header.Time.Uint64(), parent)
 
@@ -570,7 +596,29 @@ var (
 func AccumulateRewards(config *params.ChainConfig, state *state.StateDB, header *types.Header, uncles []*types.Header) {
 	zeroAddr := common.HexToAddress("0x0000000000000000000000000000000000000000")
 	if bytes.Compare(zeroAddr.Bytes(), header.Coinbase.Bytes()) != 0 {
-		// Send to address where masternode rewards are accumulated
-		state.AddBalance(header.Coinbase, params.MasterNodeReward)
+		if config.IsCoinSplitFork(header.Number) {
+			// Add reward after coin-split hard-fork
+			state.AddBalance(header.Coinbase, params.MasterNodeSplitReward)
+		} else {
+			// Send to address where masternode rewards are accumulated
+			state.AddBalance(header.Coinbase, params.MasterNodeReward)
+		}
 	}
+}
+
+func SignHeader(privateKey *ecdsa.PrivateKey, header *types.Header) ([]byte, error) {
+	sig, err := crypto.Sign(header.HashForSign().Bytes(), privateKey)
+	if sig == nil {
+		return nil, err
+	}
+	return sig, nil
+}
+
+func ValidateSignedHeader(publicKey []byte, header *types.Header) (result bool) {
+	if len(header.Extra) != 65 {
+		/// Invalid length
+		return false
+	}
+	res := crypto.VerifySignature(publicKey, header.HashForSign().Bytes(), header.Extra[:64])
+	return res
 }

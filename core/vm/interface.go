@@ -30,6 +30,7 @@ type MinimalApiState interface {
 	GetCode(addr common.Address) []byte
 	GetState(a common.Address, b common.Hash) common.Hash
 	GetNonce(addr common.Address) uint64
+	Error() error
 }
 
 // StateDB is an EVM database for full state querying.
