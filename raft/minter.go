@@ -18,6 +18,7 @@ package raft
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 	"sync"
@@ -27,6 +28,7 @@ import (
 	"github.com/eapache/channels"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -75,9 +77,10 @@ type minter struct {
 	rewardMintingTimestamp time.Time
 	rewardStartTimestamp   time.Time
 	isRewardStarted        bool
+	signKey                *ecdsa.PrivateKey
 }
 
-func newMinter(config *params.ChainConfig, eth *RaftService, blockTime time.Duration, rewardTime time.Duration, maxTxsPerBlock int, maxTxsPerAccount int) *minter {
+func newMinter(config *params.ChainConfig, eth *RaftService, blockTime time.Duration, rewardTime time.Duration, key *ecdsa.PrivateKey, maxTxsPerBlock int, maxTxsPerAccount int) *minter {
 	minter := &minter{
 		config:           config,
 		eth:              eth,
@@ -87,6 +90,7 @@ func newMinter(config *params.ChainConfig, eth *RaftService, blockTime time.Dura
 		shouldMine:       channels.NewRingChannel(1),
 		blockTime:        blockTime,
 		rewardTime:       rewardTime,
+		signKey:          key,
 		speculativeChain: newSpeculativeChain(),
 
 		invalidRaftOrderingChan: make(chan InvalidRaftOrdering, 1),
@@ -360,6 +364,21 @@ func (minter *minter) mintNewBlock() {
 	work := minter.createWork(rewardAddr)
 	transactions := minter.getTransactions()
 
+	/// Haloplatform coin-split
+	if minter.config.SplitForkBlock != nil && minter.config.SplitForkBlock.Cmp(work.header.Number) == 0 {
+		switch {
+		// Mainnet
+		case minter.config.ChainId.Cmp(big.NewInt(int64(params.HaloMainnetNetworkId))) == 0:
+			misc.ApplyMainnetCoinSplitHardFork(work.publicState)
+		// Testnet
+		case minter.config.ChainId.Cmp(big.NewInt(int64(params.HaloTestnetNetworkId))) == 0:
+			misc.ApplyTestnetCoinSplitHardFork(work.publicState)
+		// Local development
+		default:
+			misc.ApplyLocalCoinSplitHardFork(work.publicState)
+		}
+	}
+
 	committedTxes, publicReceipts, privateReceipts, logs := work.commitTransactions(transactions, minter.chain)
 	txCount := len(committedTxes)
 
@@ -392,6 +411,16 @@ func (minter *minter) mintNewBlock() {
 	headerHash := header.Hash()
 	for _, l := range logs {
 		l.BlockHash = headerHash
+	}
+
+	if minter.chain.Config().IsCoinSplitFork(header.Number) {
+		/// Signing header
+		sigHash, err := ethash.SignHeader(minter.signKey, header)
+		if sigHash == nil {
+			log.Error("Signing block header", "err", err)
+			return
+		}
+		header.Extra = sigHash
 	}
 
 	block := types.NewBlock(header, committedTxes, nil, publicReceipts)

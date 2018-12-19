@@ -122,6 +122,19 @@ func (h *Header) HashNoNonce() common.Hash {
 	})
 }
 
+// HashForSign returns the hash which is used as input for the signing.
+func (h *Header) HashForSign() common.Hash {
+	return rlpHash([]interface{}{
+		h.ParentHash,
+		h.Coinbase,
+		h.Root,
+		h.Number,
+		h.GasLimit,
+		h.GasUsed,
+		h.Time,
+	})
+}
+
 // Size returns the approximate memory used by all internal contents. It is used
 // to approximate and limit the memory consumption of various caches.
 func (h *Header) Size() common.StorageSize {
