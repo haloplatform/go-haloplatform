@@ -87,12 +87,13 @@ func (self *MNPing) doPing() {
 		receipt, err := self.ethClient.TransactionReceipt(context.Background(), self.lastTx.Hash())
 		if err != nil {
 			log.Warn("Get PING receipt error", "error", err)
-		}
-		/// We can't use receipt.Status because it's always failed
-		if receipt.CumulativeGasUsed == self.txOpt.GasLimit {
-			log.Warn("The previous PING is failed", "tx", self.lastTx.Hash().Hex())
 		} else {
-			log.Info("The previous PING is successful", "tx", self.lastTx.Hash().Hex())
+			/// We can't use receipt.Status because it's always failed
+			if receipt.CumulativeGasUsed == self.txOpt.GasLimit {
+				log.Warn("The previous PING is failed", "tx", self.lastTx.Hash().Hex())
+			} else {
+				log.Info("The previous PING is successful", "tx", self.lastTx.Hash().Hex())
+			}
 		}
 	}
 

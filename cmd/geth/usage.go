@@ -81,6 +81,7 @@ var AppHelpFlagGroups = []flagGroup{
 			// utils.LightServFlag,
 			// utils.LightPeersFlag,
 			// utils.LightKDFFlag,
+			utils.ClientPubKeyFlag,
 		},
 	},
 	// {Name: "DEVELOPER CHAIN",
@@ -155,6 +156,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.RaftPortFlag,
 			utils.ElectionTickFlag,
 			utils.RaftRewardTimeFlag,
+			utils.RaftSignKeyFlag,
 		},
 	},
 	{
