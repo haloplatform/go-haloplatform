@@ -604,10 +604,20 @@ var (
 		Value: 4,
 	}
 
+	RaftSignKeyFlag = cli.StringFlag{
+		Name:  "raftkey",
+		Usage: "Private key for signing a block",
+	}
+
 	// Quorum
 	EnableNodePermissionFlag = cli.BoolFlag{
 		Name:  "permissioned",
 		Usage: "If enabled, the node will allow only a defined list of nodes to connect",
+	}
+
+	ClientPubKeyFlag = cli.StringFlag{
+		Name:  "pubkey",
+		Usage: "Public key for block validation, hex string",
 	}
 
 	// Masternode
@@ -690,8 +700,7 @@ func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 		} else {
 			urls = strings.Split(ctx.GlobalString(BootnodesFlag.Name), ",")
 		}
-	case ctx.GlobalBool(TestnetFlag.Name):
-	case ctx.GlobalUint64(NetworkIdFlag.Name) == params.HaloTestnetNetworkId:
+	case ctx.GlobalBool(TestnetFlag.Name) || ctx.GlobalUint64(NetworkIdFlag.Name) == params.HaloTestnetNetworkId:
 		urls = params.TestnetBootnodes
 		log.Debug("Testnet bootnode", "boot", urls)
 		// case ctx.GlobalBool(RinkebyFlag.Name):
@@ -960,7 +969,13 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 		cfg.DiscoveryV5 = false
 	}
 	/// NetworkID for filtering P2P messages
-	cfg.NetworkId = ctx.GlobalUint64(NetworkIdFlag.Name)
+	cfg.NetworkId = params.HaloMainnetNetworkId
+	if ctx.GlobalIsSet(NetworkIdFlag.Name) {
+		cfg.NetworkId = ctx.GlobalUint64(NetworkIdFlag.Name)
+	}
+	if ctx.GlobalBool(TestnetFlag.Name) {
+		cfg.NetworkId = params.HaloTestnetNetworkId
+	}
 
 	if ctx.GlobalBool(RaftModeFlag.Name) {
 		cfg.PeerType = p2p.NODE_TYPE_RAFT
@@ -997,7 +1012,7 @@ func setMasternodeConfig(ctx *cli.Context, cfg *mn.Config) {
 
 	cfg.InstAddr = common.HexToAddress(inst_addr)
 	cfg.RewardAddr = common.HexToAddress(reward_addr)
-	cfg.PingInterVal = 10 // Fixed at 10 minutes
+	cfg.PingInterVal = 60 // Fixed at 60 minutes
 
 	if !ctx.GlobalIsSet(PingKeyFlag.Name) {
 		Fatalf("PING requires private key, option: %q", PingKeyFlag.Name)
@@ -1023,6 +1038,24 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	setHTTP(ctx, cfg)
 	setWS(ctx, cfg)
 	setNodeUserIdent(ctx, cfg)
+
+	/// Public key
+	switch {
+	// Mainnet
+	case cfg.P2P.NetworkId == params.HaloMainnetNetworkId:
+		params.HaloPublicKey = params.HaloMainnetPublicKey
+	// Testnet
+	case cfg.P2P.NetworkId == params.HaloTestnetNetworkId:
+		params.HaloPublicKey = params.HaloTestnetPublicKey
+	default:
+		{
+			// Using the setting from cmd. Otherwise, using the default
+			if ctx.GlobalIsSet(ClientPubKeyFlag.Name) {
+				// Validate the hex string in Ethash. Don't do here
+				params.HaloPublicKey = ctx.GlobalString(ClientPubKeyFlag.Name)
+			}
+		}
+	}
 
 	switch {
 	case ctx.GlobalIsSet(DataDirFlag.Name):
