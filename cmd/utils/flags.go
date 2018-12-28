@@ -413,6 +413,10 @@ var (
 		Name:  "rpc",
 		Usage: "Enable the HTTP-RPC server",
 	}
+	RPCKeepAliveDisabledFlag = cli.BoolFlag{
+		Name:  "rpcdisableka",
+		Usage: "Disable the HTTP-RPC server keep alive",
+	}
 	RPCListenAddrFlag = cli.StringFlag{
 		Name:  "rpcaddr",
 		Usage: "HTTP-RPC server listening interface",
@@ -798,6 +802,12 @@ func setHTTP(ctx *cli.Context, cfg *node.Config) {
 	}
 
 	cfg.HTTPVirtualHosts = splitAndTrim(ctx.GlobalString(RPCVirtualHostsFlag.Name))
+
+	if ctx.GlobalBool(RPCKeepAliveDisabledFlag.Name) {
+		cfg.HTTPDisableKA = true
+	} else {
+		cfg.HTTPDisableKA = false
+	}
 }
 
 // setWS creates the WebSocket RPC listener interface string from the set

@@ -417,7 +417,15 @@ func (n *Node) startHTTP(endpoint string, apis []rpc.API, modules []string, cors
 	if listener, err = net.Listen("tcp", endpoint); err != nil {
 		return err
 	}
-	go rpc.NewHTTPServer(cors, vhosts, handler).Serve(listener)
+
+	rpc_server := rpc.NewHTTPServer(cors, vhosts, handler)
+	if n.config.HTTPDisableKA {
+		/// Disable HTTP Keep Alive
+		n.log.Info("Disable HTTP Keep Alive on HTTP endpoint")
+		rpc_server.SetKeepAlivesEnabled(false)
+	}
+	go rpc_server.Serve(listener)
+
 	n.log.Info("HTTP endpoint opened", "url", fmt.Sprintf("http://%s", endpoint), "cors", strings.Join(cors, ","), "vhosts", strings.Join(vhosts, ","))
 	// All listeners booted successfully
 	n.httpEndpoint = endpoint
