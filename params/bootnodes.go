@@ -30,5 +30,5 @@ var MainnetBootnodes = []string{
 // TestnetBootnodes are the enode URLs of the P2P bootstrap nodes running on the
 var TestnetBootnodes = []string{
 	// Glo bootnode testnet
-	"enode://95d87fedf849fb04594fe3783cde4aa3421ba66442f4cfd358e85ba899292c0a04edf8e5361553486d89155c029adf0426dc9609e4fe677e7fa0a7d629fec350@54.191.87.237:50607",
+	"enode://b959f9d3cd422abc738dd4f015c970f341411b79c8488ef5f68792dcfc722d6c215d5dd5d2581d319e3d41120e30eecf51f347cdadc94dcf3ef03cd4f81413c5@35.197.125.20:50607",
 }
